@@ -1,6 +1,6 @@
 # \<payment-request\>
 
-[Payment Request API](https://w3c.github.io/browser-payment-api/) implementation in Polymer.
+[Payment Request API](https://w3c.github.io/browser-payment-api/) implementation in Polymer. You can take a look the [demo page](https://jorgecasar.github.io/payment-request/components/payment-request/demo/)
 
 ## Install the Polymer-CLI
 
