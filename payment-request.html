@@ -1,0 +1,178 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+
+<!--
+`payment-request`
+Payment request API implementation
+
+@demo demo/index.html 
+-->
+
+<dom-module id="payment-request">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <iron-selector id="items">
+      <content id="item" select="payment-item.item"></content>
+    </iron-selector>
+    <content id="total" select="payment-item#total"></content>
+    <content id="buyButton" select="#buyButton"></content>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'payment-request',
+
+      properties: {
+        networks: Array,
+        types: Array,
+        currency: String,
+        value: Number,
+        label: String,
+        items: {
+          type: Array,
+          value: function() {
+            return [];
+          },
+          readOnly: true,
+          observer: '_updateTotal'
+        },
+        total: {
+          type: Object,
+          value: function() {
+            return {};
+          },
+          readOnly: true
+        },
+        methodData: {
+          type: Array,
+          computed: '_computeMethodData(networks, types)'
+        },
+        details: {
+          type: Object,
+          value: function() {
+            return {};
+          },
+        }
+      },
+
+      observers: [
+        '_computeDetails(total, items)'
+      ],
+
+      attached: function() {
+        this._updateItems();
+        this._updateTotal();
+        var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
+        if ('PaymentRequest' in window) {
+          this.listen(buyButton, 'tap', 'processPurchase');
+        } else {
+          buyButton.disabled = true;
+          console.warn('This browser does not support web payments');
+        }
+      },
+
+      detached: function() {
+        if (this._itemsObserver) {
+          Polymer.dom(this).unobserveNodes(this._itemsObserver);
+        }
+      },
+
+      processPurchase: function() {
+        this.paymentRequest().show()
+          .then(function(payment) {
+            this.fire('payment', payment);
+          })
+          .catch(console.error.bind(console));
+      },
+
+      _updateItems: function() {
+        var newItems = Array.prototype.slice.call(
+          Polymer.dom(this.$.item).getDistributedNodes()
+        );
+        // do not recompute if items have not been added or removed
+        if (newItems.length === this.items.length) {
+          var added = newItems.filter(function(item) {
+            return this.items && this.items.indexOf(item) === -1;
+          }.bind(this));
+
+          if (added.length === 0) {
+            // set up observer first time around
+            if (!this._itemsObserver) {
+              this._observeItems();
+            }
+            return;
+          }
+        }
+        this._observeItems();
+        this._setItems(newItems.map(function(item){
+          return item.data
+        }));
+      },
+
+      _observeItems: function() {
+        // Watch for future updates.
+        if (!this._itemsObserver) {
+          this._itemsObserver = Polymer.dom(this.$.items).observeNodes(this._updateItems.bind(this));
+        }
+      },
+
+      _updateTotal: function() {
+        var total = Polymer.dom(this.$.total).getDistributedNodes()[0];
+        if (total) {
+        } else if (this.label && this.value && this.currency) {
+          var total = this.create('payment-item', {
+            label: this.label,
+            value: this.value,
+            currency: this.currency,
+          });
+        } else if (this.items.length) {
+            var totalAmount = 0;
+            for (var i = 0; i < this.items.length; i++) {
+              totalAmount += this.items[i].amount.value;
+            }
+            var total = this.create('payment-item', {
+              label: this.label || 'Total',
+              value: totalAmount,
+              currency: this.currency || this.items[0].amount.currency || 'USD',
+            });
+        } else {
+          total = {
+            data: null
+          };
+          console.warn('Total couldn\'t be calculated');
+        }
+        this._setTotal(total.data);
+      },
+
+      _computeMethodData: function() {
+        var methodData = [];
+        if (this.networks.length > 0) {
+          methodData.push({
+            supportedMethods: this.networks
+          });
+          methodData.push({
+            supportedMethods: ['basic-card'],
+            data: {supportedNetworks: this.networks, supportedTypes: this.types},
+          });
+        }
+        return methodData;
+      },
+
+      _computeDetails: function(total, items) {
+        this.set('details.total', total);
+        this.set('details.displayItems', items);
+      },
+
+      paymentRequest: function() {
+        debugger;
+        return new PaymentRequest(this.methodData, this.details);
+      }
+
+    });
+  </script>
+</dom-module>

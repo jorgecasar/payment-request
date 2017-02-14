@@ -1,0 +1,51 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`payment-item`
+PaymentItem dictionary implementation from browser payment API
+
+@demo demo/index.html 
+-->
+
+<dom-module id="payment-item">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'payment-item',
+
+      properties: {
+        label: String,
+        value: Number,
+        currency: String,
+        amount: {
+          type: Object,
+          computed: '_computeAmount(value, currency)'
+        },
+        data: {
+          type: Object,
+          computed: '_computeData(label, amount)'
+        },
+      },
+      _computeAmount: function(value, currency) {
+        return {
+          value: value,
+          currency: currency
+        };
+      },
+      _computeData: function(label, amount) {
+        return {
+          label: label,
+          amount: amount
+        };
+      }
+    });
+  </script>
+</dom-module>

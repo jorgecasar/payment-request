@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>payment-request demo</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../paper-button/paper-button.html">
+    <link rel="import" href="../../paper-listbox/paper-listbox.html">
+    <link rel="import" href="../../paper-item/paper-item.html">
+    <link rel="import" href="../../paper-header-panel/paper-header-panel.html">
+    <link rel="import" href="../../paper-toolbar/paper-toolbar.html">
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+
+    <link rel="import" href="../payment-request.html">
+    <link rel="import" href="../payment-item.html">
+
+    <style is="custom-style" include="iron-flex">
+      paper-header-panel {
+        width: 350px;
+        height: 50vh;
+        margin: 0 20px;
+        @apply(--shadow-elevation-2dp);
+      }
+    </style>
+  </head>
+  <body>
+    <template is="dom-bind" id="demo">
+      <div class="layout horizontal">
+        <paper-header-panel>
+          <paper-toolbar>
+            <h1 class="title">Available products</h1>
+          </paper-toolbar>
+          <div>
+            <paper-listbox multi selected-items="{{selectedItems}}">
+            <template is="dom-repeat" items="[[items]]">
+              <paper-item data="[[item]]">[[item.label]] - [[item.value]] ([[currency]])</paper-item>
+            </template>
+            </paper-listbox>
+          </div>
+        </paper-header-panel>
+
+        <paper-header-panel>
+          <paper-toolbar>
+            <h1 class="title">Selected products</h1>
+            <payment-request
+              class="right"
+              hidden$="[[!details.total]]"
+              networks='["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"]'
+              types='["debit", "credit", "prepaid"]'
+              label="Total"
+              currency="USD"
+              details="{{details}}">
+              <template is="dom-repeat" items="{{selectedItems}}">
+                <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
+              </template>
+              <paper-button id="buyButton" raised>Pay [[details.total.label]]: [[details.total.amount.value]] ([[details.total.amount.currency]])</paper-button>
+            </payment-request>
+          </paper-toolbar>
+          <div>
+            <template is="dom-repeat" items="[[details.displayItems]]">
+              <paper-item toggles data="[[item]]">[[item.label]] - [[item.amount.value]] ([[item.amount.currency]])</paper-item>
+            </template>
+          </div>
+        </paper-header-panel>
+      </div>
+    </template>
+    <script>
+      var demoApp = document.getElementById('demo');
+      demoApp.selectedItems = [];
+      demoApp.details = {};
+      demoApp.currency = 'USD'
+      demoApp.items = [
+        {label: "Apple Pie", value: 1},
+        {label: "Banana Bread", value: 2},
+        {label: "Cupcake", value: 3},
+        {label: "Donut", value: 4},
+        {label: "Eclair", value: 5},
+        {label: "Froyo", value: 8},
+        {label: "Gingerbread", value: 9},
+        {label: "Honeycomb1", value: 11},
+        {label: "Ice Cream Sandwich", value: 14},
+        {label: "Jelly Bean", value: 16},
+        {label: "KitKat", value: 19},
+        {label: "Lollipop", value: 21},
+        {label: "Marshmallow", value: 23},
+        {label: "Nougat", value: 24}
+      ];
+    </script>
+  </body>
+</html>
