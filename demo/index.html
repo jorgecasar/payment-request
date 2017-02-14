@@ -21,20 +21,30 @@
     <link rel="import" href="../payment-item.html">
 
     <style is="custom-style" include="iron-flex">
+      body {
+        margin:0
+      }
       paper-header-panel {
-        width: 350px;
-        height: 50vh;
-        margin: 0 20px;
+        width: 90vw;
+        height: 40vh;
+        margin: 5vh 5vw;
         @apply(--shadow-elevation-2dp);
+      }
+      @media (min-width: 1024px) {
+        paper-header-panel {
+          width: 40vw;
+          height: 90vh;
+        }
       }
     </style>
   </head>
   <body>
     <template is="dom-bind" id="demo">
-      <div class="layout horizontal">
+      <div class="layout horizontal wrap">
         <paper-header-panel>
           <paper-toolbar>
-            <h1 class="title">Available products</h1>
+            <paper-icon-button icon="android"></paper-icon-button>
+            <h1 class="title">Shop</h1>
           </paper-toolbar>
           <div>
             <paper-listbox multi selected-items="{{selectedItems}}">
@@ -47,19 +57,18 @@
 
         <paper-header-panel>
           <paper-toolbar>
-            <h1 class="title">Selected products</h1>
+            <paper-icon-button icon="shopping-cart"></paper-icon-button>
+            <h1 class="title">Your Cart ([[details.total.amount.value]] [[details.total.amount.currency]])</h1>
             <payment-request
               class="right"
-              hidden$="[[!details.total]]"
               networks='["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"]'
               types='["debit", "credit", "prepaid"]'
               label="Total"
-              currency="USD"
               details="{{details}}">
               <template is="dom-repeat" items="{{selectedItems}}">
                 <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
               </template>
-              <paper-button id="buyButton" raised>Pay [[details.total.label]]: [[details.total.amount.value]] ([[details.total.amount.currency]])</paper-button>
+              <paper-icon-button id="buyButton" icon="payment"></paper-icon-button>
             </payment-request>
           </paper-toolbar>
           <div>

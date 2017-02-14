@@ -11,6 +11,7 @@
     "web-component-tester": "^4.0.0",
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
     "paper-button": "^1.0.14",
+    "paper-icon-button": "^1.1.4",
     "paper-listbox": "^1.1.2",
     "paper-item": "^1.2.1",
     "paper-header-panel": "^1.1.7",
