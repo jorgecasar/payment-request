@@ -27,12 +27,64 @@ Payment request API implementation
 
       is: 'payment-request',
 
+      /**
+       * Fired when begin user interaction for the payment request.
+       *
+       * @event payment-response
+       * @param {PaymentResponse} paymentResponse The payment information to process.
+       */
+
+       /**
+       * Fired when the payment request is aborted
+       *
+       * @event payment-aborted
+       */
+
+       /**
+       * Fired when payment request generate an error.
+       *
+       * @event error
+       * @param {Error} error The request error.
+       */
+
+       /**
+       * Fired when browser not support payment request API.
+       *
+       * @event not-supported
+       */
+
+       /**
+       * Fired when PaymentRequest object can be used to make a payment.
+       *
+       * @event can-make-payment
+       */
+
+       /**
+       * Fired when PaymentRequest object cannot be used to make a payment.
+       *
+       * @event cannot-make-payment
+       */
+
+
       properties: {
-        networks: Array,
-        types: Array,
-        currency: String,
-        value: Number,
+        /**
+         * This is a human-readable description of the total.
+         * The user agent may display this to the user.
+         */
         label: String,
+        /**
+         * A valid decimal monetary value containing a monetary amount of the total
+         */
+        value: Number,
+        /**
+         * A string containing a currency identifier of the total.
+         * The value of currency can be any string that is valid within
+         * the currency system indicated by currencySystem.
+         */
+        currency: String,
+        /**
+         * Contains line items for the payment request that the user agent may display.
+         */
         items: {
           type: Array,
           value: function() {
@@ -41,6 +93,9 @@ Payment request API implementation
           readOnly: true,
           observer: '_updateTotal'
         },
+        /**
+         * Contains the total amount of the payment request.
+         */
         total: {
           type: Object,
           value: function() {
@@ -48,15 +103,49 @@ Payment request API implementation
           },
           readOnly: true
         },
+        /**
+         * Card supported networks
+         */
+        networks: Array,
+        /**
+         * Card supported types
+         */
+        types: Array,
+        /**
+         * Is used to indicate a set of supported payment methods and
+         * any associated payment method specific data for those methods.
+         */
         methodData: {
           type: Array,
+          readOnly: true,
           computed: '_computeMethodData(networks, types)'
         },
+        /**
+         * Provides information about the requested transaction.
+         */
         details: {
           type: Object,
+          readOnly: true,
           value: function() {
             return {};
           },
+        },
+
+        lastCanMakePayment: {
+          type: Boolean,
+          readOnly: true
+        },
+        lastPaymentRequest: {
+          type: Object,
+          readOnly: true
+        },
+        lastPaymentResponse: {
+          type: Object,
+          readOnly: true
+        },
+        lastError: {
+          type: Object,
+          readOnly: true
         }
       },
 
@@ -69,7 +158,7 @@ Payment request API implementation
         this._updateTotal();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         if ('PaymentRequest' in window) {
-          this.listen(buyButton, 'tap', 'processPurchase');
+          this.listen(buyButton, 'tap', 'show');
         } else {
           buyButton.disabled = true;
           this.dispatchEvent(
@@ -82,18 +171,6 @@ Payment request API implementation
         if (this._itemsObserver) {
           Polymer.dom(this).unobserveNodes(this._itemsObserver);
         }
-      },
-
-      processPurchase: function() {
-        this.paymentRequest().show()
-          .then(function(payment) {
-            this.fire('payment', payment);
-          })
-          .catch(function(error) {
-            this.dispatchEvent(
-              new CustomEvent('error', error)
-            );
-          });
       },
 
       _updateItems: function() {
@@ -116,7 +193,10 @@ Payment request API implementation
         }
         this._observeItems();
         this._setItems(newItems.map(function(item){
-          return item.data
+          return {
+            label: item.label,
+            amount: item.amount
+          };
         }));
       },
 
@@ -146,31 +226,134 @@ Payment request API implementation
             currency: this.currency || (this.items.length && this.items[0].amount.currency) || 'USD'
           });
         }
-        this._setTotal(total.data);
+        this._setTotal({
+          label: total.label,
+          amount: total.amount
+        });
       },
 
       _computeMethodData: function() {
         var methodData = [];
-        if (this.networks.length > 0) {
+        if (this.networks.length) {
           methodData.push({
             supportedMethods: this.networks
           });
-          methodData.push({
-            supportedMethods: ['basic-card'],
-            data: {supportedNetworks: this.networks, supportedTypes: this.types},
-          });
+          if (this.types.length) {
+            methodData.push({
+              supportedMethods: ['basic-card'],
+              data: {
+                supportedNetworks: this.networks,
+                supportedTypes: this.types
+              }
+            });
+          }
         }
         return methodData;
       },
 
       _computeDetails: function(total, items) {
         this.set('details.total', total);
+        this.notifyPath('details.total.label');
+        this.notifyPath('details.total.amount.value');
+        this.notifyPath('details.total.amount.currency');
         this.set('details.displayItems', items);
       },
 
+      /**
+       * Construct a PaymentRequest using the supplied methodData list including any 
+       * payment method specific data, the payment details, and the payment options
+       * 
+       * @return  {PaymentRequest}
+       */
       paymentRequest: function() {
-        debugger;
-        return new PaymentRequest(this.methodData, this.details);
+        this._setLastPaymentRequest(new PaymentRequest(this.methodData, this.details));
+        return this.lastPaymentRequest;
+      },
+
+      /**
+       * Determine if the PaymentRequest object can be used to make a payment.
+       *
+       * @return {Promise}
+       */
+      canMakePayment: function() {
+        return (this.lastPaymentRequest || this.paymentRequest()).canMakePayment()
+          .then(function(canMakePayment) {
+            this._setLastError(null);
+            this._setLastCanMakePayment(canMakePayment);
+            if (canMakePayment) {
+              event = 'can';
+            } else {
+              event = 'cannot';
+              this._setLastPaymentRequest(null);
+            }
+            this.dispatchEvent(new CustomEvent(event + '-make-payment', {
+              detail: canMakePayment
+            }));
+          }.bind(this))
+          .catch(function(error) {
+            this._setLastError(error);
+            this.dispatchEvent(
+              new CustomEvent('error', {
+                detail: error
+              })
+            );
+          }.bind(this));
+      },
+
+      /**
+       * Begin user interaction for the payment request. 
+       *
+       * @return {Promise}
+       */
+      show: function() {
+        return (this.lastPaymentRequest || this.paymentRequest()).show()
+          .then(function(paymentResponse) {
+            this._setLastError(null);
+            this._setLastPaymentResponse(paymentResponse);
+            this.dispatchEvent(
+              new CustomEvent('payment-response', {
+                detail: paymentResponse
+              })
+            );
+          }.bind(this))
+          .catch(function(error) {
+            this._setLastError(error);
+            this._setLastPaymentRequest(null);
+            this._setLastPaymentResponse(null);
+            this.dispatchEvent(
+              new CustomEvent('error', {
+                detail: error
+              })
+            );
+          }.bind(this));
+      },
+
+      /**
+       * Abort the payment request
+       * @return {Promise}
+       */
+      abort: function() {
+        if (this.lastPaymentRequest) {
+          return this.lastPaymentRequest.abort()
+            .then(function() {
+              this._setLastError(null);
+              this._setLastPaymentRequest(null);
+              this._setLastPaymentResponse(null);
+              this.dispatchEvent(
+                new CustomEvent('payment-aborted')
+              );
+            }.bind(this))
+            .catch(function(error) {
+              this._setLastError(error);
+              this.dispatchEvent(
+                new CustomEvent('error', {
+                  detail: error
+                })
+              );
+            }.bind(this));
+        } else {
+          // TODO: dispatch event to inform that there aren't any payment process.
+        }
       }
 
     });

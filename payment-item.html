@@ -22,28 +22,34 @@ PaymentItem dictionary implementation from browser payment API
       is: 'payment-item',
 
       properties: {
+        /**
+         * This is a human-readable description of the item.
+         * The user agent may display this to the user.
+         */
         label: String,
+        /**
+         * A valid decimal monetary value containing a monetary amount of the item.
+         */
         value: Number,
+        /**
+         * A string containing a currency identifier of the item.
+         * The value of currency can be any string that is valid within
+         * the currency system indicated by currencySystem.
+         */
         currency: String,
+        /**
+         * Contain the monetary amount for the item.
+         */
         amount: {
           type: Object,
+          readOnly: true,
           computed: '_computeAmount(value, currency)'
-        },
-        data: {
-          type: Object,
-          computed: '_computeData(label, amount)'
-        },
+        }
       },
       _computeAmount: function(value, currency) {
         return {
           value: value,
           currency: currency
-        };
-      },
-      _computeData: function(label, amount) {
-        return {
-          label: label,
-          amount: amount
         };
       }
     });
