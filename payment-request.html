@@ -72,7 +72,9 @@ Payment request API implementation
           this.listen(buyButton, 'tap', 'processPurchase');
         } else {
           buyButton.disabled = true;
-          console.warn('This browser does not support web payments');
+          this.dispatchEvent(
+            new CustomEvent('not-supported')
+          );
         }
       },
 
@@ -87,7 +89,11 @@ Payment request API implementation
           .then(function(payment) {
             this.fire('payment', payment);
           })
-          .catch(console.error.bind(console));
+          .catch(function(error) {
+            this.dispatchEvent(
+              new CustomEvent('error', error)
+            );
+          });
       },
 
       _updateItems: function() {
@@ -123,28 +129,22 @@ Payment request API implementation
 
       _updateTotal: function() {
         var total = Polymer.dom(this.$.total).getDistributedNodes()[0];
-        if (total) {
-        } else if (this.label && this.value && this.currency) {
+        if (this.label && this.value && this.currency) {
           var total = this.create('payment-item', {
             label: this.label,
             value: this.value,
             currency: this.currency,
           });
-        } else if (this.items.length) {
-            var totalAmount = 0;
-            for (var i = 0; i < this.items.length; i++) {
-              totalAmount += this.items[i].amount.value;
-            }
-            var total = this.create('payment-item', {
-              label: this.label || 'Total',
-              value: totalAmount,
-              currency: this.currency || this.items[0].amount.currency || 'USD',
-            });
         } else {
-          total = {
-            data: null
-          };
-          console.warn('Total couldn\'t be calculated');
+          var totalAmount = 0;
+          for (var i = 0; i < this.items.length; i++) {
+            totalAmount += this.items[i].amount.value;
+          }
+          var total = this.create('payment-item', {
+            label: this.label || 'Total',
+            value: totalAmount,
+            currency: this.currency || (this.items.length && this.items[0].amount.currency) || 'USD'
+          });
         }
         this._setTotal(total.data);
       },
