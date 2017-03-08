@@ -1,6 +1,8 @@
 # \<payment-request\>
 
-[Payment Request API](https://w3c.github.io/browser-payment-api/) implementation in Polymer. You can take a look the [demo page](https://jorgecasar.github.io/payment-request/components/payment-request/demo/)
+[Payment Request API](https://w3c.github.io/browser-payment-api/) implementation in Polymer. You can take a look the [demo page](https://jorgecasar.github.io/payment-request/components/payment-request/demo/).
+
+Note: It isn't supported by all browser, check [Payment Request API browser support](http://caniuse.com/#feat=payment-request).
 
 ## Installation
 
