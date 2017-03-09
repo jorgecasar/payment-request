@@ -3,9 +3,12 @@
   "description": "Payment request API implementation in Polymer",
   "version": "0.1.0",
   "main": [
-    "payment-request.html",
-    "payment-item.html"
+    "payment-request-all.html"
   ],
+  "repository" :{
+    "type" : "git",
+    "url" : "https://github.com/jorgecasar/payment-request.git"
+  },
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0"
   },
