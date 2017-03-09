@@ -18,6 +18,7 @@
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
 
     <link rel="import" href="../payment-request.html">
+    <link rel="import" href="../payment-method.html">
     <link rel="import" href="../payment-item.html">
 
     <style is="custom-style" include="iron-flex">
@@ -61,10 +62,16 @@
             <h1 class="title">Your Cart ([[details.total.amount.value]] [[details.total.amount.currency]])</h1>
             <payment-request
               class="right"
-              networks='["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"]'
-              types='["debit", "credit", "prepaid"]'
               label="Total"
               details="{{details}}">
+              <payment-method
+                supported='["basic-card"]'
+                data='{
+                  "supportedNetwork": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"],
+                  "supportedTypes": ["debit", "credit", "prepaid"]
+                }'></payment-method>
+              <payment-method
+                supported='["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"]'></payment-method>
               <template is="dom-repeat" items="{{selectedItems}}">
                 <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
               </template>

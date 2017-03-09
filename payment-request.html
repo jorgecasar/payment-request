@@ -15,6 +15,7 @@ Payment request API implementation
         display: block;
       }
     </style>
+    <content id="methods" select="payment-method"></content>
     <iron-selector id="items">
       <content id="item" select="payment-item.item"></content>
     </iron-selector>
@@ -111,15 +112,19 @@ Payment request API implementation
          * Card supported types
          */
         types: Array,
+
         /**
-         * Is used to indicate a set of supported payment methods and
+         * Is used to store supported payment methods and
          * any associated payment method specific data for those methods.
          */
-        methodData: {
+        methods: {
           type: Array,
           readOnly: true,
-          computed: '_computeMethodData(networks, types)'
+          value: function() {
+            return [];
+          }
         },
+
         /**
          * Provides information about the requested transaction.
          */
@@ -154,6 +159,7 @@ Payment request API implementation
       ],
 
       attached: function() {
+        this._updateMethods();
         this._updateItems();
         this._updateTotal();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
@@ -232,23 +238,38 @@ Payment request API implementation
         });
       },
 
-      _computeMethodData: function() {
-        var methodData = [];
-        if (this.networks.length) {
-          methodData.push({
-            supportedMethods: this.networks
-          });
-          if (this.types.length) {
-            methodData.push({
-              supportedMethods: ['basic-card'],
-              data: {
-                supportedNetworks: this.networks,
-                supportedTypes: this.types
-              }
-            });
+      _updateMethods: function() {
+        var newMethods = Array.prototype.slice.call(
+          Polymer.dom(this.$.methods).getDistributedNodes()
+        );
+        // do not recompute if methods have not been added or removed
+        if (newMethods.length === this.methods.length) {
+          var added = newMethods.filter(function(method) {
+            return this.methods && this.methods.indexOf(method) === -1;
+          }.bind(this));
+
+          if (added.length === 0) {
+            // set up observer first time around
+            if (!this._methodsObserver) {
+              this._observeMethods();
+            }
+            return;
           }
         }
-        return methodData;
+        this._observeMethods();
+        this._setMethods(newMethods.map(function(method) {
+          return {
+            supportedMethods: method.supported,
+            data: method.data
+          };
+        }));
+      },
+
+      _observeMethods: function() {
+        // Watch for future updates.
+        if (!this._methodsObserver) {
+          this._methodsObserver = Polymer.dom(this.$.methods).observeNodes(this._updateMethods.bind(this));
+        }
       },
 
       _computeDetails: function(total, items) {
@@ -266,7 +287,7 @@ Payment request API implementation
        * @return  {PaymentRequest}
        */
       paymentRequest: function() {
-        this._setLastPaymentRequest(new PaymentRequest(this.methodData, this.details));
+        this._setLastPaymentRequest(new PaymentRequest(this.methods, this.details));
         return this.lastPaymentRequest;
       },
 

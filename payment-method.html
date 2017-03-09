@@ -1,0 +1,34 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`payment-method`
+PaymentItem dictionary implementation from browser payment API
+
+@demo demo/index.html 
+-->
+
+<dom-module id="payment-method">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'payment-method',
+
+      properties: {
+        supported: {
+          type: Array
+        },
+        data: {
+          type: Object
+        }
+      }
+    });
+  </script>
+</dom-module>
