@@ -31,14 +31,14 @@ Payment request API implementation
       /**
        * Fired when begin user interaction for the payment request.
        *
-       * @event payment-response
+       * @event response
        * @param {PaymentResponse} paymentResponse The payment information to process.
        */
 
        /**
        * Fired when the payment request is aborted
        *
-       * @event payment-aborted
+       * @event aborted
        */
 
        /**
@@ -46,12 +46,6 @@ Payment request API implementation
        *
        * @event error
        * @param {Error} error The request error.
-       */
-
-       /**
-       * Fired when browser not support payment request API.
-       *
-       * @event not-supported
        */
 
        /**
@@ -68,50 +62,49 @@ Payment request API implementation
 
 
       properties: {
+
         /**
          * This is a human-readable description of the total.
          * The user agent may display this to the user.
          */
         label: String,
+
         /**
          * A valid decimal monetary value containing a monetary amount of the total
          */
         value: Number,
+
         /**
          * A string containing a currency identifier of the total.
          * The value of currency can be any string that is valid within
          * the currency system indicated by currencySystem.
          */
         currency: String,
+
         /**
          * Contains line items for the payment request that the user agent may display.
          */
         items: {
           type: Array,
+          readOnly: true,
+          notify: true,
+          observer: '_updateTotal',
           value: function() {
             return [];
           },
-          readOnly: true,
-          observer: '_updateTotal'
         },
+
         /**
          * Contains the total amount of the payment request.
          */
         total: {
           type: Object,
+          readOnly: true,
+          notify: true,
           value: function() {
             return {};
-          },
-          readOnly: true
+          }
         },
-        /**
-         * Card supported networks
-         */
-        networks: Array,
-        /**
-         * Card supported types
-         */
-        types: Array,
 
         /**
          * Is used to store supported payment methods and
@@ -128,34 +121,38 @@ Payment request API implementation
         /**
          * Provides information about the requested transaction.
          */
-        details: {
+        _details: {
           type: Object,
-          readOnly: true,
-          value: function() {
-            return {};
-          },
+          computed: '_computeDetails(total, items)',
         },
 
         lastCanMakePayment: {
           type: Boolean,
           readOnly: true
         },
-        lastPaymentRequest: {
+
+        lastRequest: {
           type: Object,
-          readOnly: true
+          notify: true,
+          computed: '_computeRequest(methods, details)'
         },
-        lastPaymentResponse: {
+
+        lastResponse: {
           type: Object,
-          readOnly: true
+          readOnly: true,
+          notify: true
         },
+
         lastError: {
           type: Object,
-          readOnly: true
+          readOnly: true,
+          notify: true,
+          observer: '_dispatError'
         }
       },
 
       observers: [
-        '_computeDetails(total, items)'
+        
       ],
 
       attached: function() {
@@ -163,14 +160,7 @@ Payment request API implementation
         this._updateItems();
         this._updateTotal();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
-        if ('PaymentRequest' in window) {
-          this.listen(buyButton, 'tap', 'show');
-        } else {
-          buyButton.disabled = true;
-          this.dispatchEvent(
-            new CustomEvent('not-supported')
-          );
-        }
+        this.listen(buyButton, 'tap', 'buyButtonTap');
       },
 
       detached: function() {
@@ -273,11 +263,10 @@ Payment request API implementation
       },
 
       _computeDetails: function(total, items) {
-        this.set('details.total', total);
-        this.notifyPath('details.total.label');
-        this.notifyPath('details.total.amount.value');
-        this.notifyPath('details.total.amount.currency');
-        this.set('details.displayItems', items);
+        return {
+          total: total,
+          displayItems: items
+        };
       },
 
       /**
@@ -286,9 +275,28 @@ Payment request API implementation
        * 
        * @return  {PaymentRequest}
        */
-      paymentRequest: function() {
-        this._setLastPaymentRequest(new PaymentRequest(this.methods, this.details));
-        return this.lastPaymentRequest;
+      _computeRequest: function(methods, details) {
+        return window.PaymentRequest ? new PaymentRequest(methods, details) : null;
+      },
+
+      buyButtonTap: function() {
+        if ('PaymentRequest' in window) {
+          this.canMakePayment()
+            .then(function(result){
+              if (result) {
+                this.show();
+              }
+            }.bind(this))
+          .catch(function(error) {
+            // Unable to determine.
+            this.show();
+          }.bind(this));
+        } else {
+          var error = {
+            detail: 'Payment Request API not supported'
+          };
+          this._setLastError(error);
+        }
       },
 
       /**
@@ -297,72 +305,21 @@ Payment request API implementation
        * @return {Promise}
        */
       canMakePayment: function() {
-        return (this.lastPaymentRequest || this.paymentRequest()).canMakePayment()
-          .then(function(canMakePayment) {
-            this._setLastError(null);
-            this._setLastCanMakePayment(canMakePayment);
-            if (canMakePayment) {
-              event = 'can';
-            } else {
-              event = 'cannot';
-              this._setLastPaymentRequest(null);
-            }
-            this.dispatchEvent(new CustomEvent(event + '-make-payment', {
-              detail: canMakePayment
-            }));
-          }.bind(this))
-          .catch(function(error) {
-            this._setLastError(error);
-            this.dispatchEvent(
-              new CustomEvent('error', {
-                detail: error
-              })
-            );
-          }.bind(this));
-      },
-
-      /**
-       * Begin user interaction for the payment request. 
-       *
-       * @return {Promise}
-       */
-      show: function() {
-        return (this.lastPaymentRequest || this.paymentRequest()).show()
-          .then(function(paymentResponse) {
-            this._setLastError(null);
-            this._setLastPaymentResponse(paymentResponse);
-            this.dispatchEvent(
-              new CustomEvent('payment-response', {
-                detail: paymentResponse
-              })
-            );
-          }.bind(this))
-          .catch(function(error) {
-            this._setLastError(error);
-            this._setLastPaymentRequest(null);
-            this._setLastPaymentResponse(null);
-            this.dispatchEvent(
-              new CustomEvent('error', {
-                detail: error
-              })
-            );
-          }.bind(this));
-      },
-
-      /**
-       * Abort the payment request
-       * @return {Promise}
-       */
-      abort: function() {
-        if (this.lastPaymentRequest) {
-          return this.lastPaymentRequest.abort()
-            .then(function() {
+        var promise;
+        if (this.lastRequest && this.lastRequest.canMakePayment) {
+          promise = this.lastRequest.canMakePayment()
+            .then(function(canMakePayment) {
               this._setLastError(null);
-              this._setLastPaymentRequest(null);
-              this._setLastPaymentResponse(null);
-              this.dispatchEvent(
-                new CustomEvent('payment-aborted')
-              );
+              this._setLastCanMakePayment(canMakePayment);
+              if (canMakePayment) {
+                event = 'can';
+              } else {
+                event = 'cannot';
+                this._setlastRequest(null);
+              }
+              this.dispatchEvent(new CustomEvent(event + '-make-payment', {
+                detail: canMakePayment
+              }));
             }.bind(this))
             .catch(function(error) {
               this._setLastError(error);
@@ -373,8 +330,67 @@ Payment request API implementation
               );
             }.bind(this));
         } else {
-          // TODO: dispatch event to inform that there aren't any payment process.
+          promise = new Promise(function(resolve, reject) {
+            resolve();
+          });
         }
+        return promise;
+      },
+
+      /**
+       * Begin user interaction for the payment request. 
+       *
+       * @return {Promise}
+       */
+      show: function() {
+        var promise;
+        if (this.lastRequest.show) {
+          promise = this.lastRequest.show()
+            .then(this._setLastResponse.bind(this));
+        }
+        return promise.catch(this._setLastError.bind(this));
+      },
+
+      /**
+       * Abort the payment request
+       * @return {Promise}
+       */
+      abort: function() {
+        var promise;
+        if (this.lastRequest) {
+          promise = this.lastRequest.abort()
+            .then(function() {
+              this._setLastResponse(null);
+              this.dispatchEvent(
+                new CustomEvent('aborted')
+              );
+            }.bind(this));
+        } else {
+          promise = new Promise(function(resolve, reject) {
+            resolve('There aren\'t any active request');
+          });
+        }
+        return promise.catch(this._setLastError.bind(this));
+      },
+
+      _dispatError: function(error) {
+        this.dispatchEvent(
+          new CustomEvent('error', {
+            detail: error
+          })
+        );
+        return error;
+      },
+
+      _dispatResponse: function(response) {
+        if (response !== null) {
+          this.dispatchEvent(
+            new CustomEvent('response', {
+              detail: response
+            })
+          );
+        }
+        return response;
       }
 
     });
