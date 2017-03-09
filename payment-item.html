@@ -37,19 +37,41 @@ PaymentItem dictionary implementation from browser payment API
          * the currency system indicated by currencySystem.
          */
         currency: String,
+
+        /**
+         * A URL that indicates the currency system
+         * that the currency identifier belongs to
+         */
+        currencySystem: {
+          type: String,
+          value: 'urn:iso:std:iso:4217'
+        },
+
         /**
          * Contain the monetary amount for the item.
          */
         amount: {
           type: Object,
           readOnly: true,
-          computed: '_computeAmount(value, currency)'
+          computed: '_computeAmount(value, currency, currencySystem)'
+        },
+
+        /**
+         * When set to true this flag means that the amount member is not final.
+         * This is commonly used to show items such as shipping or tax amounts
+         * that depend upon selection of shipping address or shipping option.
+         */
+        pending: {
+          type: Boolean,
+          value: false
         }
       },
-      _computeAmount: function(value, currency) {
+      
+      _computeAmount: function(value, currency, currencySystem) {
         return {
           value: value,
-          currency: currency
+          currency: currency,
+          currencySystem: currencySystem
         };
       }
     });
