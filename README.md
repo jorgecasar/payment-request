@@ -16,10 +16,11 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 
 ## Usage
 
-1. Import Web Components' polyfill:
+1. Import Web Components' polyfill and Payment Request API shim:
 
 	```html
 	<script src="bower_components/webcomponentsjs/webcomponents.js"></script>
+	<script src="https://storage.googleapis.com/prshim/v1/payment-shim.js"></script>
 	```
 
 2. Import Custom Elements:
@@ -32,12 +33,16 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 3. Start using it!
 
 	```html
-	<payment-request
-      networks='["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"]'
-      types='["debit", "credit", "prepaid"]'>
-      <payment-item class="item" label="Item 1" currency="EUR" value="1337"></payment-item>
-      <button id="buyButton">Buy</button>
-    </payment-request>
+	<payment-request>
+		<payment-method
+			supported='["basic-card"]'
+			data='{
+				"supportedNetwork": ["amex", "mastercard", "visa" ],
+				"supportedTypes": ["debit", "credit"]
+			}'></payment-method>
+    <payment-item class="item" label="Item 1" currency="EUR" value="1337"></payment-item>
+    <button id="buyButton">Buy</button>
+  </payment-request>
 	```
 
 ## Viewing component docs & demo
