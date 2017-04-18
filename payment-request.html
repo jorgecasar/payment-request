@@ -5,7 +5,7 @@
 `payment-request`
 Payment request API implementation
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 
 <dom-module id="payment-request">
@@ -121,7 +121,7 @@ Payment request API implementation
         /**
          * Provides information about the requested transaction.
          */
-        _details: {
+        details: {
           type: Object,
           computed: '_computeDetails(total, items)',
         },
@@ -152,7 +152,7 @@ Payment request API implementation
       },
 
       observers: [
-        
+
       ],
 
       attached: function() {
@@ -270,13 +270,13 @@ Payment request API implementation
       },
 
       /**
-       * Construct a PaymentRequest using the supplied methodData list including any 
+       * Construct a PaymentRequest using the supplied methodData list including any
        * payment method specific data, the payment details, and the payment options
-       * 
+       *
        * @return  {PaymentRequest}
        */
       _computeRequest: function(methods, details) {
-        return window.PaymentRequest ? new PaymentRequest(methods, details) : null;
+        return methods && methods.length && window.PaymentRequest ? new PaymentRequest(methods, details) : null;
       },
 
       /**
@@ -332,7 +332,7 @@ Payment request API implementation
       },
 
       /**
-       * Begin user interaction for the payment request. 
+       * Begin user interaction for the payment request.
        *
        * @return {Promise}
        */
