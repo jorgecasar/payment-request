@@ -26,30 +26,48 @@
     <style is="custom-style" include="iron-flex">
       body {
         margin:0
+				@apply(--paper-font-subhead);
+				margin:0;
       }
+			.note {
+				padding: 0.5vh 1vw;
+				margin:0;
+				text-align: center;
+				background: darkorange;
+				color: white;
+			}
       paper-header-panel {
-        width: 90vw;
-        height: 40vh;
-        margin: 5vh 5vw;
+        width: 100vw;
+        height: 46vh;
         @apply(--shadow-elevation-2dp);
       }
+			paper-toolbar {
+				--paper-toolbar-background: darkgreen
+			}
       #toast {
         --paper-toast-background-color: red;
         --paper-toast-color: white;
       }
+			#toast paper-icon-button {
+				position: absolute;
+				top:0.5em;
+				right:0;
+			}
       @media (min-width: 1024px) {
         paper-header-panel {
-          width: 40vw;
-          height: 90vh;
+          width: 48vw;
+          height: 94vh;
+					margin: 1vh 1vw;
         }
       }
     </style>
   </head>
   <body>
     <template is="dom-bind" id="demo">
-      <paper-toast id="toast" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
+      <paper-toast id="toast" class="fit-bottom" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
         <paper-icon-button icon="close" onclick="toast.toggle()"></paper-icon-button>
       </paper-toast>
+			<p class="note">The payment data don't leave your browser.<br/>This is a demo, it's not real.</p>
       <div class="layout horizontal wrap">
         <paper-header-panel>
           <paper-toolbar>
@@ -108,7 +126,7 @@
     <script>
       var demoApp = document.getElementById('demo');
       demoApp.selectedItems = [];
-      demoApp.currency = 'USD'
+      demoApp.currency = 'EUR'
       demoApp.items = [
         {label: "Apple Pie", value: 1},
         {label: "Banana Bread", value: 2},
@@ -117,7 +135,7 @@
         {label: "Eclair", value: 5},
         {label: "Froyo", value: 8},
         {label: "Gingerbread", value: 9},
-        {label: "Honeycomb1", value: 11},
+        {label: "Honeycomb", value: 11},
         {label: "Ice Cream Sandwich", value: 14},
         {label: "Jelly Bean", value: 16},
         {label: "KitKat", value: 19},
