@@ -156,9 +156,7 @@ Payment request API implementation
       ],
 
       attached: function() {
-        this._updateMethods();
-        this._updateItems();
-        this._updateTotal();
+				this._updateAll();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         this.listen(buyButton, 'tap', 'buyButtonTap');
       },
@@ -168,6 +166,12 @@ Payment request API implementation
           Polymer.dom(this).unobserveNodes(this._itemsObserver);
         }
       },
+
+			_updateAll: function() {
+				this._updateMethods();
+        this._updateItems();
+        this._updateTotal();
+			},
 
       _updateItems: function() {
         var newItems = Array.prototype.slice.call(
@@ -309,7 +313,6 @@ Payment request API implementation
                 event = 'can';
               } else {
                 event = 'cannot';
-                this._setlastRequest(null);
               }
               this.dispatchEvent(new CustomEvent(event + '-make-payment', {
                 detail: canMakePayment
@@ -340,7 +343,8 @@ Payment request API implementation
         var promise;
         if (this.lastRequest.show) {
           promise = this.lastRequest.show()
-            .then(this._setLastResponse.bind(this));
+						.catch(this._updateItems.bind(this))
+            .then(this._setLastResponse.bind(this))
         }
         return promise.catch(this._setLastError.bind(this));
       },
