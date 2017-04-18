@@ -75,6 +75,8 @@
               items="{{displayItems}}"
               total="{{total}}"
               last-error="{{lastError}}"
+							last-response="{{paymentResponse}}"
+							on-last-response-changed="parseResponse"
               >
               <payment-method
                 supported='["basic-card"]'
@@ -91,9 +93,14 @@
             </payment-request>
           </paper-toolbar>
           <div>
-            <template is="dom-repeat" items="[[displayItems]]">
-              <paper-item toggles data="[[item]]">[[item.label]] - [[item.amount.value]] ([[item.amount.currency]])</paper-item>
-            </template>
+						<div hidden$="[[responseParsed]]">
+							<template is="dom-repeat" items="[[displayItems]]">
+								<paper-item toggles data="[[item]]">[[item.label]] - [[item.amount.value]] ([[item.amount.currency]])</paper-item>
+							</template>
+						</div>
+						<div hidden$="[[!responseParsed]]">
+							<pre>[[responseParsed]]</pre>
+						</div>
           </div>
         </paper-header-panel>
       </div>
@@ -118,6 +125,14 @@
         {label: "Marshmallow", value: 23},
         {label: "Nougat", value: 24}
       ];
+			demoApp.parseResponse = function(evt) {
+				var paymentResponse = evt.detail.value;
+				setTimeout(function(){
+					// Make your request to server for a real purchase.
+					paymentResponse.complete('success');
+				}, 3000);
+				demoApp.responseParsed = JSON.stringify(paymentResponse, null, '  ');
+			}
     </script>
   </body>
 </html>
