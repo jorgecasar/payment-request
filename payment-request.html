@@ -1,5 +1,4 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../iron-selector/iron-selector.html">
 
 <!--
 `payment-request`
@@ -16,9 +15,7 @@ Payment request API implementation
       }
     </style>
     <content id="methods" select="payment-method"></content>
-    <iron-selector id="items">
-      <content id="item" select="payment-item.item"></content>
-    </iron-selector>
+    <content id="items" select="payment-item.item"></content>
     <content id="total" select="payment-item#total"></content>
     <content id="buyButton" select="#buyButton"></content>
   </template>
@@ -79,7 +76,10 @@ Payment request API implementation
          * The value of currency can be any string that is valid within
          * the currency system indicated by currencySystem.
          */
-        currency: String,
+        currency: {
+          type: String,
+          value: 'EUR'
+        },
 
         /**
          * Contains line items for the payment request that the user agent may display.
@@ -151,12 +151,8 @@ Payment request API implementation
         }
       },
 
-      observers: [
-
-      ],
-
       attached: function() {
-				this._updateAll();
+        this._updateAll();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         this.listen(buyButton, 'tap', 'buyButtonTap');
       },
@@ -167,15 +163,15 @@ Payment request API implementation
         }
       },
 
-			_updateAll: function() {
-				this._updateMethods();
+      _updateAll: function() {
+        this._updateMethods();
         this._updateItems();
         this._updateTotal();
-			},
+      },
 
       _updateItems: function() {
         var newItems = Array.prototype.slice.call(
-          Polymer.dom(this.$.item).getDistributedNodes()
+          Polymer.dom(this.$.items).getDistributedNodes()
         );
         // do not recompute if items have not been added or removed
         if (newItems.length === this.items.length) {
@@ -208,24 +204,23 @@ Payment request API implementation
       },
 
       _updateTotal: function() {
-        var total = Polymer.dom(this.$.total).getDistributedNodes()[0];
-        if (this.label && this.value && this.currency) {
-          var total = this.create('payment-item', {
-            label: this.label,
-            value: this.value,
-            currency: this.currency,
-          });
-        } else {
-          var totalAmount = 0;
-          for (var i = 0; i < this.items.length; i++) {
-            totalAmount += this.items[i].amount.value;
-          }
-          var total = this.create('payment-item', {
-            label: this.label || 'Total',
-            value: totalAmount,
-            currency: this.currency || (this.items.length && this.items[0].amount.currency) || 'USD'
-          });
+        var totalDom = Polymer.dom(this.$.total);
+        var total = totalDom.getDistributedNodes()[0];
+        if (!total) {
+          total = this.create('payment-item');
+          totalDom.appendChild(total);
         }
+        var currency = this.items.length ?
+          this.items[0].amount.currency :
+          this.currency;
+        var value = 0;
+        for (var i = 0; i < this.items.length; i++) {
+          value += this.items[i].amount.value;
+        }
+        total.set('label', this.label || 'Total');
+        total.set('value', value);
+        total.set('currency', currency);
+
         this._setTotal({
           label: total.label,
           amount: total.amount
@@ -321,10 +316,10 @@ Payment request API implementation
             .catch(function(error) {
               this._setLastError(error);
               this.dispatchEvent(
-                new CustomEvent('error', {
-                  detail: error
-                })
-              );
+								new CustomEvent('error', {
+									detail: error
+								})
+							);
             }.bind(this));
         } else {
           promise = new Promise(function(resolve, reject) {
@@ -343,7 +338,7 @@ Payment request API implementation
         var promise;
         if (this.lastRequest.show) {
           promise = this.lastRequest.show()
-						.catch(this._updateItems.bind(this))
+            .catch(this._updateItems.bind(this))
             .then(this._setLastResponse.bind(this))
         }
         return promise.catch(this._setLastError.bind(this));
@@ -360,8 +355,8 @@ Payment request API implementation
             .then(function() {
               this._setLastResponse(null);
               this.dispatchEvent(
-                new CustomEvent('aborted')
-              );
+								new CustomEvent('aborted')
+							);
             }.bind(this));
         } else {
           promise = new Promise(function(resolve, reject) {
@@ -371,7 +366,7 @@ Payment request API implementation
         return promise.catch(this._setLastError.bind(this));
       },
 
-      _dispatError: function(error) {
+			_dispatError: function(error) {
         this.dispatchEvent(
           new CustomEvent('error', {
             detail: error
