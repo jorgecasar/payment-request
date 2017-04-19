@@ -26,7 +26,10 @@ PaymentMethodData dictionary implementation from browser payment API
           type: Array
         },
         data: {
-          type: Object
+          type: Object,
+					value: function() {
+						return {};
+					}
         },
 				dictionary: {
 					type: Object,
@@ -36,7 +39,7 @@ PaymentMethodData dictionary implementation from browser payment API
 
 			_computeDictionary: function(supported, data) {
 				return {
-          supported: supported,
+          supportedMethods: supported,
           data: data
         };
 			}
