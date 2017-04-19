@@ -152,55 +152,66 @@ Payment request API implementation
       },
 
       attached: function() {
-        this._updateAll();
+        this._updatePropertiesFromNodes();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         this.listen(buyButton, 'tap', 'buyButtonTap');
       },
 
       detached: function() {
-        if (this._itemsObserver) {
-          Polymer.dom(this).unobserveNodes(this._itemsObserver);
-        }
+        this.__unobserveNodes('items');
       },
 
-      _updateAll: function() {
-        this._updateMethods();
-        this._updateItems();
-        this._updateTotal();
+      _updatePropertiesFromNodes: function() {
+        this.__updatePropertyFromNode('methods');
+        this.__updatePropertyFromNode('items');
       },
 
-      _updateItems: function() {
-        var newItems = Array.prototype.slice.call(
-          Polymer.dom(this.$.items).getDistributedNodes()
-        );
-        // do not recompute if items have not been added or removed
-        if (newItems.length === this.items.length) {
-          var added = newItems.filter(function(item) {
-            return this.items && this.items.indexOf(item) === -1;
-          }.bind(this));
-
-          if (added.length === 0) {
-            // set up observer first time around
-            if (!this._itemsObserver) {
-              this._observeItems();
-            }
-            return;
-          }
-        }
-        this._observeItems();
-        this._setItems(newItems.map(function(item){
-          return {
-            label: item.label,
-            amount: item.amount
-          };
-        }));
+      __updatePropertyFromNode: function(property, observerInfo) {
+				observerInfo = observerInfo || {
+					target: this.$[property],
+					addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
+					removedNodes: []
+				};
+				// Add items from added nodes
+				observerInfo.addedNodes.forEach(function(node){
+					this.splice(property, this[property].length, 0, node.dictionary);
+				}.bind(this));
+				// Remove items from removed nodes
+				observerInfo.removedNodes.forEach(function(node){
+					this.splice(property, this[property].indexOf(node.dictionary), 1);
+				}.bind(this));
+        this.__observeNodes(property);
       },
 
-      _observeItems: function() {
+      __observerNode: function(node) {
+        return '_' + node + 'Observer';
+      },
+
+      __observeNodes: function(property) {
         // Watch for future updates.
-        if (!this._itemsObserver) {
-          this._itemsObserver = Polymer.dom(this.$.items).observeNodes(this._updateItems.bind(this));
+        if (!this[this.__observerNode(property)]) {
+          this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNode.bind(this, property));
         }
+      },
+
+      __unobserveNodes: function(property) {
+        if (this[this.__observerNode(property)]) {
+          Polymer.dom(this).unobserveNodes(this[this.__observerNode(property)]);
+        }
+      },
+
+      _mapItemsToPropery: function(node) {
+          return {
+            label: node.label,
+            amount: node.amount
+          };
+      },
+
+      _mapMethodsToPropery: function(node) {
+          return {
+            supportedMethods: node.supported,
+            data: node.data
+          };
       },
 
       _updateTotal: function() {
@@ -225,40 +236,6 @@ Payment request API implementation
           label: total.label,
           amount: total.amount
         });
-      },
-
-      _updateMethods: function() {
-        var newMethods = Array.prototype.slice.call(
-          Polymer.dom(this.$.methods).getDistributedNodes()
-        );
-        // do not recompute if methods have not been added or removed
-        if (newMethods.length === this.methods.length) {
-          var added = newMethods.filter(function(method) {
-            return this.methods && this.methods.indexOf(method) === -1;
-          }.bind(this));
-
-          if (added.length === 0) {
-            // set up observer first time around
-            if (!this._methodsObserver) {
-              this._observeMethods();
-            }
-            return;
-          }
-        }
-        this._observeMethods();
-        this._setMethods(newMethods.map(function(method) {
-          return {
-            supportedMethods: method.supported,
-            data: method.data
-          };
-        }));
-      },
-
-      _observeMethods: function() {
-        // Watch for future updates.
-        if (!this._methodsObserver) {
-          this._methodsObserver = Polymer.dom(this.$.methods).observeNodes(this._updateMethods.bind(this));
-        }
       },
 
       _computeDetails: function(total, items) {
@@ -316,10 +293,10 @@ Payment request API implementation
             .catch(function(error) {
               this._setLastError(error);
               this.dispatchEvent(
-								new CustomEvent('error', {
-									detail: error
-								})
-							);
+                new CustomEvent('error', {
+                  detail: error
+                })
+              );
             }.bind(this));
         } else {
           promise = new Promise(function(resolve, reject) {
@@ -355,8 +332,8 @@ Payment request API implementation
             .then(function() {
               this._setLastResponse(null);
               this.dispatchEvent(
-								new CustomEvent('aborted')
-							);
+                new CustomEvent('aborted')
+              );
             }.bind(this));
         } else {
           promise = new Promise(function(resolve, reject) {
@@ -366,7 +343,7 @@ Payment request API implementation
         return promise.catch(this._setLastError.bind(this));
       },
 
-			_dispatError: function(error) {
+      _dispatError: function(error) {
         this.dispatchEvent(
           new CustomEvent('error', {
             detail: error
