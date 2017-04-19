@@ -88,7 +88,6 @@ Payment request API implementation
           type: Array,
           readOnly: true,
           notify: true,
-          observer: '_updateTotal',
           value: function() {
             return [];
           },
@@ -134,7 +133,7 @@ Payment request API implementation
         lastRequest: {
           type: Object,
           notify: true,
-          computed: '_computeRequest(methods, details)'
+          computed: '_computeRequest(methods.*, details.*)'
         },
 
         lastResponse: {
@@ -151,6 +150,10 @@ Payment request API implementation
         }
       },
 
+			observers: [
+				'_updateTotal(items.length)'
+			],
+
       attached: function() {
         this._updatePropertiesFromNodes();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
@@ -162,16 +165,19 @@ Payment request API implementation
       },
 
       _updatePropertiesFromNodes: function() {
-        this.__updatePropertyFromNode('methods');
-        this.__updatePropertyFromNode('items');
+        this.__observeNodes('methods');
+        this.__observeNodes('items');
       },
 
       __updatePropertyFromNode: function(property, observerInfo) {
-				observerInfo = observerInfo || {
-					target: this.$[property],
-					addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
-					removedNodes: []
-				};
+				if (!observerInfo) {
+					observerInfo = {
+						target: this.$[property],
+						addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
+						removedNodes: []
+					};
+					this.splice(property, 0, this[property].length-1);
+				}
 				// Add items from added nodes
 				observerInfo.addedNodes.forEach(function(node){
 					this.splice(property, this[property].length, 0, node.dictionary);
@@ -180,7 +186,6 @@ Payment request API implementation
 				observerInfo.removedNodes.forEach(function(node){
 					this.splice(property, this[property].indexOf(node.dictionary), 1);
 				}.bind(this));
-        this.__observeNodes(property);
       },
 
       __observerNode: function(node) {
@@ -252,6 +257,8 @@ Payment request API implementation
        * @return  {PaymentRequest}
        */
       _computeRequest: function(methods, details) {
+				methods = methods.base;
+				details = details.base;
         return methods && methods.length && window.PaymentRequest ? new PaymentRequest(methods, details) : null;
       },
 
@@ -315,7 +322,7 @@ Payment request API implementation
         var promise;
         if (this.lastRequest.show) {
           promise = this.lastRequest.show()
-            .catch(this._updateItems.bind(this))
+            .catch(this.__updatePropertyFromNode.bind(this, 'methods', null))
             .then(this._setLastResponse.bind(this))
         }
         return promise.catch(this._setLastError.bind(this));
