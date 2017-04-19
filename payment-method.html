@@ -4,7 +4,7 @@
 `payment-method`
 PaymentMethodData dictionary implementation from browser payment API
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 
 <dom-module id="payment-method">
@@ -27,8 +27,19 @@ PaymentMethodData dictionary implementation from browser payment API
         },
         data: {
           type: Object
-        }
-      }
+        },
+				dictionary: {
+					type: Object,
+					computed: '_computeDictionary(supported, data)'
+				}
+      },
+
+			_computeDictionary: function(supported, data) {
+				return {
+          supported: supported,
+          data: data
+        };
+			}
     });
   </script>
 </dom-module>
