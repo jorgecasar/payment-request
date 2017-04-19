@@ -125,6 +125,32 @@ Payment request API implementation
           computed: '_computeDetails(total, items)',
         },
 
+        payerName: {
+          type: Boolean,
+          value: false
+        },
+        payerEmail: {
+          type: Boolean,
+          value: false
+        },
+        payerPhone: {
+          type: Boolean,
+          value: false
+        },
+        shipping: {
+          type: Boolean,
+          value: false
+        },
+        shippingType: {
+          type: String,
+          value: 'shipping'
+        },
+
+        options: {
+        type: Object,
+        computed: '_computeOptions(payerName, payerEmail, payerPhone, shipping, shippingType)'
+        },
+
         lastCanMakePayment: {
           type: Boolean,
           readOnly: true
@@ -133,7 +159,7 @@ Payment request API implementation
         lastRequest: {
           type: Object,
           notify: true,
-          computed: '_computeRequest(methods.*, details.*)'
+          computed: '_computeRequest(methods.*, details.*, options.*)'
         },
 
         lastResponse: {
@@ -147,12 +173,19 @@ Payment request API implementation
           readOnly: true,
           notify: true,
           observer: '_dispatError'
+        },
+
+        canMakePayment: {
+          type: Boolean,
+          value: false,
+          notify: true
         }
       },
 
-			observers: [
-				'_updateTotal(items.length)'
-			],
+      observers: [
+        '_updateTotal(items.length)',
+        'checkCanMakePayment(lastRequest)'
+      ],
 
       attached: function() {
         this._updatePropertiesFromNodes();
@@ -170,22 +203,22 @@ Payment request API implementation
       },
 
       __updatePropertyFromNode: function(property, observerInfo) {
-				if (!observerInfo) {
-					observerInfo = {
-						target: this.$[property],
-						addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
-						removedNodes: []
-					};
-					this.splice(property, 0, this[property].length-1);
-				}
-				// Add items from added nodes
-				observerInfo.addedNodes.forEach(function(node){
-					this.splice(property, this[property].length, 0, node.dictionary);
-				}.bind(this));
-				// Remove items from removed nodes
-				observerInfo.removedNodes.forEach(function(node){
-					this.splice(property, this[property].indexOf(node.dictionary), 1);
-				}.bind(this));
+        if (!observerInfo) {
+            observerInfo = {
+            target: this.$[property],
+            addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
+            removedNodes: []
+          };
+          this.splice(property, 0, this[property].length-1);
+        }
+        // Add items from added nodes
+        observerInfo.addedNodes.forEach(function(node){
+          this.splice(property, this[property].length, 0, node.dictionary);
+        }.bind(this));
+        // Remove items from removed nodes
+        observerInfo.removedNodes.forEach(function(node){
+          this.splice(property, this[property].indexOf(node.dictionary), 1);
+        }.bind(this));
       },
 
       __observerNode: function(node) {
@@ -250,16 +283,26 @@ Payment request API implementation
         };
       },
 
+      _computeOptions: function(payerName, payerEmail, payerPhone, shipping, shippingType) {return {
+          requestPayerName: payerName,
+          requestPayerEmail: payerEmail,
+          requestPayerPhone: payerPhone,
+          requestShipping: shipping,
+          shippingType: shippingType
+        };
+      },
+
       /**
        * Construct a PaymentRequest using the supplied methodData list including any
        * payment method specific data, the payment details, and the payment options
        *
        * @return  {PaymentRequest}
        */
-      _computeRequest: function(methods, details) {
-				methods = methods.base;
-				details = details.base;
-        return methods && methods.length && window.PaymentRequest ? new PaymentRequest(methods, details) : null;
+      _computeRequest: function(methods, details, options) {
+        methods = methods.base;
+        details = details.base;
+				options = options.base;
+        return methods && methods.length && window.PaymentRequest ? new PaymentRequest(methods, details, options) : null;
       },
 
       /**
@@ -281,30 +324,13 @@ Payment request API implementation
        *
        * @return {Promise}
        */
-      canMakePayment: function() {
+      checkCanMakePayment: function(lastRequest) {
         var promise;
-        if (this.lastRequest && this.lastRequest.canMakePayment) {
-          promise = this.lastRequest.canMakePayment()
-            .then(function(canMakePayment) {
-              this._setLastError(null);
-              this._setLastCanMakePayment(canMakePayment);
-              if (canMakePayment) {
-                event = 'can';
-              } else {
-                event = 'cannot';
-              }
-              this.dispatchEvent(new CustomEvent(event + '-make-payment', {
-                detail: canMakePayment
-              }));
-            }.bind(this))
-            .catch(function(error) {
-              this._setLastError(error);
-              this.dispatchEvent(
-                new CustomEvent('error', {
-                  detail: error
-                })
-              );
-            }.bind(this));
+        if (lastRequest && lastRequest.canMakePayment) {
+          promise = lastRequest.canMakePayment()
+            .then(this.set.bind(this, 'canMakePayment'))
+						.then(this._setLastError.bind(this, null))
+            .catch(this._setLastError.bind(this));
         } else {
           promise = new Promise(function(resolve, reject) {
             resolve();
@@ -319,13 +345,10 @@ Payment request API implementation
        * @return {Promise}
        */
       show: function() {
-        var promise;
-        if (this.lastRequest.show) {
-          promise = this.lastRequest.show()
+        return this.lastRequest.show()
+            .catch(this._setLastError.bind(this))
             .catch(this.__updatePropertyFromNode.bind(this, 'methods', null))
-            .then(this._setLastResponse.bind(this))
-        }
-        return promise.catch(this._setLastError.bind(this));
+            .then(this._setLastResponse.bind(this));
       },
 
       /**
