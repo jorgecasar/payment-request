@@ -26,10 +26,17 @@ Payment request API implementation
       is: 'payment-request',
 
       /**
-       * Fired when begin user interaction for the payment request.
+       * Fired when user interaction begins for the payment request.
        *
        * @event response
        * @param {PaymentResponse} paymentResponse The payment information to process.
+       */
+
+      /**
+       * Fired when a PaymentRequest is created.
+       *
+       * @event request
+       * @param {PaymentRequest} paymentRequest The payment request.
        */
 
        /**
@@ -159,20 +166,22 @@ Payment request API implementation
         lastRequest: {
           type: Object,
           notify: true,
-          computed: '_computeRequest(methods.*, details.*, options.*)'
+          computed: '_computeRequest(methods.*, details.*, options.*)',
+          observer: '_dispatchRequest'
         },
 
         lastResponse: {
           type: Object,
           readOnly: true,
-          notify: true
+          notify: true,
+          observer: '_dispatchResponse'
         },
 
         lastError: {
           type: Object,
           readOnly: true,
           notify: true,
-          observer: '_dispatError'
+          observer: '_dispatchError'
         },
 
         canMakePayment: {
@@ -194,17 +203,20 @@ Payment request API implementation
       },
 
       detached: function() {
+        this.__unobserveNodes('methods');
         this.__unobserveNodes('items');
+        this.__unobserveNodes('shippingOptions');
       },
 
       _updatePropertiesFromNodes: function() {
         this.__observeNodes('methods');
         this.__observeNodes('items');
+        this.__observeNodes('shippingOptions');
       },
 
-      __updatePropertyFromNode: function(property, observerInfo) {
+      __updatePropertyFromNodes: function(property, observerInfo) {
         if (!observerInfo) {
-            observerInfo = {
+          observerInfo = {
             target: this.$[property],
             addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
             removedNodes: []
@@ -228,7 +240,7 @@ Payment request API implementation
       __observeNodes: function(property) {
         // Watch for future updates.
         if (!this[this.__observerNode(property)]) {
-          this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNode.bind(this, property));
+          this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNodes.bind(this, property));
         }
       },
 
@@ -236,20 +248,6 @@ Payment request API implementation
         if (this[this.__observerNode(property)]) {
           Polymer.dom(this).unobserveNodes(this[this.__observerNode(property)]);
         }
-      },
-
-      _mapItemsToPropery: function(node) {
-          return {
-            label: node.label,
-            amount: node.amount
-          };
-      },
-
-      _mapMethodsToPropery: function(node) {
-          return {
-            supportedMethods: node.supported,
-            data: node.data
-          };
       },
 
       _updateTotal: function() {
@@ -301,8 +299,12 @@ Payment request API implementation
       _computeRequest: function(methods, details, options) {
         methods = methods.base;
         details = details.base;
-				options = options.base;
-        return methods && methods.length && window.PaymentRequest ? new PaymentRequest(methods, details, options) : null;
+        options = options.base;
+        var request = null;
+        if (methods && methods.length && window.PaymentRequest) {
+           request = new PaymentRequest(methods, details, options);
+        }
+        return request;
       },
 
       /**
@@ -329,7 +331,7 @@ Payment request API implementation
         if (lastRequest && lastRequest.canMakePayment) {
           promise = lastRequest.canMakePayment()
             .then(this.set.bind(this, 'canMakePayment'))
-						.then(this._setLastError.bind(this, null))
+            .then(this._setLastError.bind(this, null))
             .catch(this._setLastError.bind(this));
         } else {
           promise = new Promise(function(resolve, reject) {
@@ -347,7 +349,7 @@ Payment request API implementation
       show: function() {
         return this.lastRequest.show()
             .catch(this._setLastError.bind(this))
-            .catch(this.__updatePropertyFromNode.bind(this, 'methods', null))
+            .catch(this.__updatePropertyFromNodes.bind(this, 'methods', null))
             .then(this._setLastResponse.bind(this));
       },
 
@@ -373,7 +375,7 @@ Payment request API implementation
         return promise.catch(this._setLastError.bind(this));
       },
 
-      _dispatError: function(error) {
+      _dispatchError: function(error) {
         this.dispatchEvent(
           new CustomEvent('error', {
             detail: error
@@ -382,7 +384,7 @@ Payment request API implementation
         return error;
       },
 
-      _dispatResponse: function(response) {
+      _dispatchResponse: function(response) {
         if (response !== null) {
           this.dispatchEvent(
             new CustomEvent('response', {
@@ -391,6 +393,15 @@ Payment request API implementation
           );
         }
         return response;
+      },
+
+      _dispatchRequest: function(request) {
+        this.dispatchEvent(
+          new CustomEvent('request', {
+            detail: request
+          })
+        );
+        return request;
       }
 
     });
