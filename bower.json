@@ -1,7 +1,7 @@
 {
   "name": "payment-request",
   "description": "Payment request API implementation in Polymer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": [
     "payment-request-all.html"
   ],
