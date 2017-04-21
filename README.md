@@ -60,10 +60,10 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 
 ## Viewing component docs & demo
 
-First, make sure you have the [Polymer CLI](https://www.npmjs.com/package/polymer-cli) installed and serve the component:
+First, make sure you have the [polymer-serve](https://www.npmjs.com/package/polymer-serve) installed and serve the component:
 
 ```
-$ polymer serve
+$ polyserve --protocol https/1.1
 ```
 
 ## Running Tests
