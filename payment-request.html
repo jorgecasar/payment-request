@@ -1,5 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
-
+<link rel="import" href="../iron-selector/iron-selector.html">
 <!--
 `payment-request`
 Payment request API implementation
@@ -10,13 +10,16 @@ Payment request API implementation
 <dom-module id="payment-request">
   <template>
     <style>
-      :host {
+       :host {
         display: block;
       }
     </style>
     <content id="methods" select="payment-method"></content>
-    <content id="items" select="payment-item.item"></content>
-    <content id="total" select="payment-item#total"></content>
+    <content id="items" select=".item"></content>
+    <content id="total" select="#total"></content>
+    <iron-selector id="shippingOptionsSelector" attr-for-selected="id" selected-attribute="selected" selected="{{shippingOptionSelected}}">
+      <content id="shippingOptions" select="payment-shipping-option"></content>
+    </iron-selector>
     <content id="buyButton" select="#buyButton"></content>
   </template>
 
@@ -39,30 +42,30 @@ Payment request API implementation
        * @param {PaymentRequest} paymentRequest The payment request.
        */
 
-       /**
-       * Fired when the payment request is aborted
-       *
-       * @event aborted
-       */
+      /**
+      * Fired when the payment request is aborted
+      *
+      * @event aborted
+      */
 
-       /**
-       * Fired when payment request generate an error.
-       *
-       * @event error
-       * @param {Error} error The request error.
-       */
+      /**
+      * Fired when payment request generate an error.
+      *
+      * @event error
+      * @param {Error} error The request error.
+      */
 
-       /**
-       * Fired when PaymentRequest object can be used to make a payment.
-       *
-       * @event can-make-payment
-       */
+      /**
+      * Fired when PaymentRequest object can be used to make a payment.
+      *
+      * @event can-make-payment
+      */
 
-       /**
-       * Fired when PaymentRequest object cannot be used to make a payment.
-       *
-       * @event cannot-make-payment
-       */
+      /**
+      * Fired when PaymentRequest object cannot be used to make a payment.
+      *
+      * @event cannot-make-payment
+      */
 
 
       properties: {
@@ -95,7 +98,7 @@ Payment request API implementation
           type: Array,
           readOnly: true,
           notify: true,
-          value: function() {
+          value: function () {
             return [];
           },
         },
@@ -107,7 +110,7 @@ Payment request API implementation
           type: Object,
           readOnly: true,
           notify: true,
-          value: function() {
+          value: function () {
             return {};
           }
         },
@@ -119,7 +122,7 @@ Payment request API implementation
         methods: {
           type: Array,
           readOnly: true,
-          value: function() {
+          value: function () {
             return [];
           }
         },
@@ -154,15 +157,20 @@ Payment request API implementation
         },
 
         options: {
-        type: Object,
-        computed: '_computeOptions(payerName, payerEmail, payerPhone, shipping, shippingType)'
+          type: Object,
+          computed: '_computeOptions(payerName, payerEmail, payerPhone, shipping, shippingType)'
         },
 
-        lastCanMakePayment: {
-          type: Boolean,
-          readOnly: true
+        shippingOptions: {
+          type: Array,
+          value: function () {
+            return [];
+          }
         },
 
+        shippingOptionSelected: {
+          type: String
+        },
         lastRequest: {
           type: Object,
           notify: true,
@@ -184,7 +192,7 @@ Payment request API implementation
           observer: '_dispatchError'
         },
 
-        canMakePayment: {
+        lastCanMakePayment: {
           type: Boolean,
           value: false,
           notify: true
@@ -193,64 +201,65 @@ Payment request API implementation
 
       observers: [
         '_updateTotal(items.length)',
-        'checkCanMakePayment(lastRequest)'
+        '_updateShippingOptions(shippingOptionSelected)'
+        //'checkCanMakePayment(lastRequest)'
       ],
 
-      attached: function() {
+      attached: function () {
         this._updatePropertiesFromNodes();
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         this.listen(buyButton, 'tap', 'buyButtonTap');
       },
 
-      detached: function() {
+      detached: function () {
         this.__unobserveNodes('methods');
         this.__unobserveNodes('items');
         this.__unobserveNodes('shippingOptions');
       },
 
-      _updatePropertiesFromNodes: function() {
+      _updatePropertiesFromNodes: function () {
         this.__observeNodes('methods');
         this.__observeNodes('items');
         this.__observeNodes('shippingOptions');
       },
 
-      __updatePropertyFromNodes: function(property, observerInfo) {
+      __updatePropertyFromNodes: function (property, observerInfo) {
         if (!observerInfo) {
           observerInfo = {
             target: this.$[property],
             addedNodes: Polymer.dom(this.$[property]).getDistributedNodes(),
             removedNodes: []
           };
-          this.splice(property, 0, this[property].length-1);
+          this.splice(property, 0, this[property].length - 1);
         }
         // Add items from added nodes
-        observerInfo.addedNodes.forEach(function(node){
+        observerInfo.addedNodes.forEach(function (node) {
           this.splice(property, this[property].length, 0, node.dictionary);
         }.bind(this));
         // Remove items from removed nodes
-        observerInfo.removedNodes.forEach(function(node){
+        observerInfo.removedNodes.forEach(function (node) {
           this.splice(property, this[property].indexOf(node.dictionary), 1);
         }.bind(this));
       },
 
-      __observerNode: function(node) {
+      __observerNode: function (node) {
         return '_' + node + 'Observer';
       },
 
-      __observeNodes: function(property) {
+      __observeNodes: function (property) {
         // Watch for future updates.
         if (!this[this.__observerNode(property)]) {
           this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNodes.bind(this, property));
         }
       },
 
-      __unobserveNodes: function(property) {
+      __unobserveNodes: function (property) {
         if (this[this.__observerNode(property)]) {
           Polymer.dom(this).unobserveNodes(this[this.__observerNode(property)]);
         }
       },
 
-      _updateTotal: function() {
+      _updateTotal: function () {
         var totalDom = Polymer.dom(this.$.total);
         var total = totalDom.getDistributedNodes()[0];
         if (!total) {
@@ -274,14 +283,15 @@ Payment request API implementation
         });
       },
 
-      _computeDetails: function(total, items) {
+      _computeDetails: function (total, items) {
         return {
           total: total,
           displayItems: items
         };
       },
 
-      _computeOptions: function(payerName, payerEmail, payerPhone, shipping, shippingType) {return {
+      _computeOptions: function (payerName, payerEmail, payerPhone, shipping, shippingType) {
+        return {
           requestPayerName: payerName,
           requestPayerEmail: payerEmail,
           requestPayerPhone: payerPhone,
@@ -296,13 +306,17 @@ Payment request API implementation
        *
        * @return  {PaymentRequest}
        */
-      _computeRequest: function(methods, details, options) {
+      _computeRequest: function (methods, details, options) {
         methods = methods.base;
         details = details.base;
         options = options.base;
         var request = null;
         if (methods && methods.length && window.PaymentRequest) {
-           request = new PaymentRequest(methods, details, options);
+          request = new PaymentRequest(methods, details, options);
+          if (this.shipping) {
+            request.addEventListener('shippingaddresschange', this.onShippingAddressChange.bind(this));
+            request.addEventListener('shippingoptionchange', this.onShippingOptionChange.bind(this));
+          }
         }
         return request;
       },
@@ -311,7 +325,7 @@ Payment request API implementation
        * Method executed when payButton is tapped.
        * You can override it to do something more complex.
        */
-      buyButtonTap: function() {
+      buyButtonTap: function () {
         if ('PaymentRequest' in window) {
           this.show();
         } else {
@@ -326,15 +340,15 @@ Payment request API implementation
        *
        * @return {Promise}
        */
-      checkCanMakePayment: function(lastRequest) {
+      checkCanMakePayment: function (lastRequest) {
         var promise;
         if (lastRequest && lastRequest.canMakePayment) {
           promise = lastRequest.canMakePayment()
-            .then(this.set.bind(this, 'canMakePayment'))
+            .then(this.set.bind(this, 'lastCanMakePayment'))
             .then(this._setLastError.bind(this, null))
             .catch(this._setLastError.bind(this));
         } else {
-          promise = new Promise(function(resolve, reject) {
+          promise = new Promise(function (resolve, reject) {
             resolve();
           });
         }
@@ -346,45 +360,93 @@ Payment request API implementation
        *
        * @return {Promise}
        */
-      show: function() {
+      show: function () {
         return this.lastRequest.show()
-            .catch(this._setLastError.bind(this))
-            .catch(this.__updatePropertyFromNodes.bind(this, 'methods', null))
-            .then(this._setLastResponse.bind(this));
+          .catch(this._setLastError.bind(this))
+          .catch(this._updateTotal.bind(this))
+          .then(this._setLastResponse.bind(this));
       },
 
       /**
        * Abort the payment request
        * @return {Promise}
        */
-      abort: function() {
+      abort: function () {
         var promise;
         if (this.lastRequest) {
           promise = this.lastRequest.abort()
-            .then(function() {
+            .then(function () {
               this._setLastResponse(null);
               this.dispatchEvent(
                 new CustomEvent('aborted')
               );
             }.bind(this));
         } else {
-          promise = new Promise(function(resolve, reject) {
+          promise = new Promise(function (resolve, reject) {
             resolve('There aren\'t any active request');
           });
         }
-        return promise.catch(this._setLastError.bind(this));
+        return promise
+          .catch(this._setLastError.bind(this));
       },
 
-      _dispatchError: function(error) {
-        this.dispatchEvent(
-          new CustomEvent('error', {
-            detail: error
-          })
-        );
+      onShippingAddressChange: function (evt) {
+        evt.updateWith(this.updateWithShippingAddress(evt));
+      },
+
+      onShippingOptionChange: function (evt) {
+        evt.updateWith(this.updateWithShippingOptions(evt));
+      },
+
+      updateWithShippingAddress: function (evt) {
+        this.changeShippingOption(evt.target.shippingOption);
+        this._updateTotal();
+        this._updateShippingOptions();
+        return Promise.resolve(this.details);
+      },
+
+      updateWithShippingOptions: function (evt) {
+        this.changeShippingOption(evt.target.shippingOption);
+        this._updateTotal();
+        this._updateShippingOptions();
+        return Promise.resolve(this.details);
+      },
+
+      changeShippingOption: function (shippingOption) {
+        shippingOption = shippingOption || this.$.shippingOptionsSelector.selected;
+        // Remove last shipping option from displayed items
+        if (this.$.shippingOptionsSelector.selectedItem) {
+          var index = this.items.indexOf(this.$.shippingOptionsSelector.selectedItem.dictionary);
+          if (index !== -1) {
+            this.splice('items', index, 1);
+          }
+        }
+        // Add shipping option to displayed items
+        if (shippingOption) {
+          this.$.shippingOptionsSelector.select(shippingOption);
+          this.push('items', this.$.shippingOptionsSelector.selectedItem.dictionary);
+        }
+      },
+
+      _updateShippingOptions: function () {
+        this.details.shippingOptions = this.$.shippingOptionsSelector.items.map(function (item) {
+          return item.dictionary;
+        });
+      },
+
+      _dispatchError: function (error) {
+        if (error) {
+          console.error(error);
+          this.dispatchEvent(
+            new CustomEvent('error', {
+              detail: error
+            })
+          );
+        }
         return error;
       },
 
-      _dispatchResponse: function(response) {
+      _dispatchResponse: function (response) {
         if (response !== null) {
           this.dispatchEvent(
             new CustomEvent('response', {
@@ -395,7 +457,7 @@ Payment request API implementation
         return response;
       },
 
-      _dispatchRequest: function(request) {
+      _dispatchRequest: function (request) {
         this.dispatchEvent(
           new CustomEvent('request', {
             detail: request
