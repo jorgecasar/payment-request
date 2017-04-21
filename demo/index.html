@@ -19,45 +19,43 @@
     <link rel="import" href="../../paper-toast/paper-toast.html">
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
 
-    <link rel="import" href="../payment-request.html">
-    <link rel="import" href="../payment-method.html">
-    <link rel="import" href="../payment-item.html">
+    <link rel="import" href="../payment-request-all.html">
 
     <style is="custom-style" include="iron-flex">
       body {
         margin:0
-				@apply(--paper-font-subhead);
-				margin:0;
+        @apply(--paper-font-subhead);
+        margin:0;
       }
-			.note {
-				padding: 0.5vh 1vw;
-				margin:0;
-				text-align: center;
-				background: darkorange;
-				color: white;
-			}
+      .note {
+        padding: 0.5vh 1vw;
+        margin:0;
+        text-align: center;
+        background: darkorange;
+        color: white;
+      }
       paper-header-panel {
         width: 100vw;
         height: 46vh;
         @apply(--shadow-elevation-2dp);
       }
-			paper-toolbar {
-				--paper-toolbar-background: darkgreen
-			}
+      paper-toolbar {
+        --paper-toolbar-background: darkgreen
+      }
       #toast {
         --paper-toast-background-color: red;
         --paper-toast-color: white;
       }
-			#toast paper-icon-button {
-				position: absolute;
-				top:0.5em;
-				right:0;
-			}
+      #toast paper-icon-button {
+        position: absolute;
+        top:0.5em;
+        right:0;
+      }
       @media (min-width: 1024px) {
         paper-header-panel {
           width: 48vw;
           height: 94vh;
-					margin: 1vh 1vw;
+          margin: 1vh 1vw;
         }
       }
     </style>
@@ -67,7 +65,7 @@
       <paper-toast id="toast" class="fit-bottom" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
         <paper-icon-button icon="close" onclick="toast.toggle()"></paper-icon-button>
       </paper-toast>
-			<p class="note">This is a demo, it's not a real purchase. <br/>The payment data don't leave your browser.</p>
+      <p class="note">This is a demo, it's not a real purchase. <br/>The payment data don't leave your browser.</p>
       <div class="layout horizontal wrap">
         <paper-header-panel>
           <paper-toolbar>
@@ -90,12 +88,14 @@
             <payment-request
               class="right"
               label="Total"
-							currency="[[currency]]"
+              currency="[[currency]]"
               items="{{displayItems}}"
               total="{{total}}"
               last-error="{{lastError}}"
-							last-response="{{paymentResponse}}"
-							on-last-response-changed="parseResponse"
+              last-response="{{paymentResponse}}"
+              on-last-response-changed="parseResponse"
+              shipping-option-selected="expressShipping"
+              shipping
               >
               <payment-method
                 supported='["basic-card"]'
@@ -108,25 +108,28 @@
               <template is="dom-repeat" items="{{selectedItems}}">
                 <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
               </template>
+
+              <payment-shipping-option id="standardShipping" label="Standard" currency="[[currency]]" value="0"></payment-shipping-option>
+              <payment-shipping-option id="expressShipping" label="Express" currency="[[currency]]" value="10"></payment-shipping-option>
               <paper-icon-button id="buyButton" icon="payment"></paper-icon-button>
             </payment-request>
           </paper-toolbar>
           <div>
-						<div hidden$="[[responseParsed]]">
-							<template is="dom-repeat" items="[[displayItems]]">
-								<paper-item toggles data="[[item]]">[[item.label]] - [[localeCurrency(item.amount.value, item.amount.currency)]]</paper-item>
-							</template>
-						</div>
-						<div hidden$="[[!responseParsed]]">
-							<pre>[[responseParsed]]</pre>
-						</div>
+            <div hidden$="[[responseParsed]]">
+              <template is="dom-repeat" items="[[displayItems]]">
+                <paper-item toggles data="[[item]]">[[item.label]] - [[localeCurrency(item.amount.value, item.amount.currency)]]</paper-item>
+              </template>
+            </div>
+            <div hidden$="[[!responseParsed]]">
+              <pre>[[responseParsed]]</pre>
+            </div>
           </div>
         </paper-header-panel>
       </div>
     </template>
     <script>
       var demoApp = document.getElementById('demo');
-			demoApp.responseParsed = null;
+      demoApp.responseParsed = null;
       demoApp.selectedItems = [];
       demoApp.currency = 'EUR'
       demoApp.items = [
@@ -145,18 +148,18 @@
         {label: "Marshmallow", value: 23},
         {label: "Nougat", value: 24}
       ];
-			demoApp.parseResponse = function(evt) {
-				var paymentResponse = evt.detail.value;
-				setTimeout(function(){
-					// Make your request to server for a real purchase.
-					paymentResponse.complete('success');
-				}, 3000);
-				demoApp.responseParsed = paymentResponse ? JSON.stringify(paymentResponse, null, '  ') : false;
-			}
+      demoApp.parseResponse = function(evt) {
+        var paymentResponse = evt.detail.value;
+        setTimeout(function(){
+          // Make your request to server for a real purchase.
+          paymentResponse.complete('success');
+        }, 3000);
+        demoApp.responseParsed = paymentResponse ? JSON.stringify(paymentResponse, null, '  ') : false;
+      }
 
-			demoApp.localeCurrency = function(amount, currency) {
-				return amount.toLocaleString(navigator.language, { style: 'currency', currency: currency });
-			}
+      demoApp.localeCurrency = function(amount, currency) {
+        return amount.toLocaleString(navigator.language, { style: 'currency', currency: currency });
+      }
     </script>
   </body>
 </html>
