@@ -65,10 +65,10 @@ PaymentItem dictionary implementation from browser payment API
           value: false
         },
 
-				dictionary: {
-					type: Object,
-					computed: '_computeDictionary(label, amount, pending)'
-				}
+        dictionary: {
+          type: Object,
+          computed: '_computeDictionary(label, amount, pending)'
+        }
       },
 
       _computeAmount: function(value, currency, currencySystem) {
@@ -79,13 +79,13 @@ PaymentItem dictionary implementation from browser payment API
         };
       },
 
-			_computeDictionary: function(label, amount, pending) {
-				return {
+      _computeDictionary: function(label, amount, pending) {
+        return {
           label: label,
           amount: amount,
           pending: pending
         };
-			}
+      }
     });
   </script>
 </dom-module>
