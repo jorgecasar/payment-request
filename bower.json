@@ -2,12 +2,7 @@
   "name": "payment-request",
   "description": "Payment request API implementation in Polymer",
   "version": "0.2.1",
-  "main": [
-    "paper-request.html",
-    "paper-item.html",
-    "paper-method.html",
-    "paper-shipping-option.html"
-  ],
+  "main": "payment-request-all.html",
   "repository": {
     "type": "git",
     "url": "https://github.com/jorgecasar/payment-request.git"
