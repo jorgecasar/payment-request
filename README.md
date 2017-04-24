@@ -1,3 +1,6 @@
+[![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/jorgecasar/payment-request)
+
+
 # \<payment-request\> API component
 
 [Payment Request API](https://w3c.github.io/browser-payment-api/) web component build with using Polymer. You can take a look the [demo page](https://jorgecasar.github.io/payment-request/components/payment-request/demo/) to see how it works.
@@ -31,18 +34,28 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 
 3. Start using it!
 
+	<!--
+	```
+	<custom-element-demo>
+		<template>
+		<base href="https://user-content-dot-custom-elements.appspot.com/jorgecasar/payment-request/bb725682888fabeab331f4be9dd8f0ed324f8048/payment-request/">
+		<script src="../webcomponentsjs/webcomponents-lite.js"></script>
+		<link rel="import" href="payment-request.html">
+		<next-code-block></next-code-block>
+		</template>
+	</custom-element-demo>
+	```
+	-->
 	```html
-	<payment-request last-response="{{paymentResponse}}">
-		<payment-method
-			supported='["basic-card"]'
-			data='{
+	<payment-request>
+		<payment-method supported='["basic-card"]' data='{
 				"supportedNetwork": ["amex", "mastercard", "visa" ],
 				"supportedTypes": ["debit", "credit"]
 			}'></payment-method>
-    	<payment-item class="item" label="Item 1" currency="EUR" value="1337"></payment-item>
-    	<button id="buyButton">Buy</button>
+		<payment-item class="item" label="Item 1" currency="EUR" value="1337"></payment-item>
+		<button id="buyButton">Buy</button>
 	</payment-request>
-  	```
+	```
 
 4. Validate payment data and complete payment request.
 
