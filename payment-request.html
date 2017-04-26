@@ -233,13 +233,17 @@ Payment request API implementation
           this.splice(property, 0, this[property].length - 1);
         }
         // Add items from added nodes
-        observerInfo.addedNodes.forEach(function (node) {
+        observerInfo.addedNodes.filter(this._isElementNode).forEach(function (node) {
           this.splice(property, this[property].length, 0, node.dictionary);
         }.bind(this));
         // Remove items from removed nodes
-        observerInfo.removedNodes.forEach(function (node) {
+        observerInfo.removedNodes.filter(this._isElementNode).forEach(function (node) {
           this.splice(property, this[property].indexOf(node.dictionary), 1);
         }.bind(this));
+      },
+
+      _isElementNode: function(node) {
+        return (node.nodeType === Node.ELEMENT_NODE);
       },
 
       __observerNode: function (node) {
@@ -265,6 +269,8 @@ Payment request API implementation
         if (!total) {
           total = this.create('payment-item');
           totalDom.appendChild(total);
+          this.importHref('../payment-item.html', this._updateTotal.bind(this), console.error.bind(console), true);
+          return;
         }
         var currency = this.items.length ?
           this.items[0].amount.currency :
@@ -273,14 +279,11 @@ Payment request API implementation
         for (var i = 0; i < this.items.length; i++) {
           value += this.items[i].amount.value;
         }
-        total.set('label', this.label || 'Total');
-        total.set('value', value);
-        total.set('currency', currency);
+        total.label = this.label || 'Total';
+        total.value = value;
+        total.currency = currency;
 
-        this._setTotal({
-          label: total.label,
-          amount: total.amount
-        });
+        this._setTotal(total.dictionary);
       },
 
       _computeDetails: function (total, items) {
