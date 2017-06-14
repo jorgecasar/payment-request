@@ -1,0 +1,29 @@
+<link rel="import" href="../polymer/polymer.html">
+<dom-module id="payment-address">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'payment-address',
+      properties: {
+        country: String,
+        addressLine: Array,
+        region: String,
+        city: String,
+        dependentLocality: String,
+        postalCode: String,
+        sortingCode: String,
+        languageCode: String,
+        organization: String,
+        recipient: String,
+        phone: String
+      }
+    });
+  </script>
+</dom-module>

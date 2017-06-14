@@ -1,4 +1,8 @@
 <link rel="import" href="../polymer/polymer.html">
+<!--
+  Prepare for 2.0
+  <link rel="import" href="../polymer/lib/utils/flattened-nodes-observer.html">
+-->
 <link rel="import" href="../iron-selector/iron-selector.html">
 <!--
 `payment-request`
@@ -14,13 +18,13 @@ Payment request API implementation
         display: block;
       }
     </style>
-    <content id="methods" select="payment-method"></content>
-    <content id="items" select=".item"></content>
-    <content id="total" select="#total"></content>
+    <slot id="methods" name="method"></slot>
+    <slot id="total" name="total"></slot>
     <iron-selector id="shippingOptionsSelector" attr-for-selected="id" selected-attribute="selected" selected="{{shippingOptionSelected}}">
-      <content id="shippingOptions" select="payment-shipping-option"></content>
+      <slot id="shippingOptions" name="shipping-option"></slot>
     </iron-selector>
-    <content id="buyButton" select="#buyButton"></content>
+    <slot id="buyButton" name="button"></slot>
+    <slot id="items"></slot>
   </template>
 
   <script>
@@ -98,7 +102,7 @@ Payment request API implementation
           type: Array,
           readOnly: true,
           notify: true,
-          value: function () {
+          value: function() {
             return [];
           },
         },
@@ -110,7 +114,7 @@ Payment request API implementation
           type: Object,
           readOnly: true,
           notify: true,
-          value: function () {
+          value: function() {
             return {};
           }
         },
@@ -122,7 +126,7 @@ Payment request API implementation
         methods: {
           type: Array,
           readOnly: true,
-          value: function () {
+          value: function() {
             return [];
           }
         },
@@ -132,7 +136,7 @@ Payment request API implementation
          */
         details: {
           type: Object,
-          computed: '_computeDetails(total, items)',
+          computed: '_computeDetails(total, items, shippingItem)',
         },
 
         payerName: {
@@ -163,7 +167,7 @@ Payment request API implementation
 
         shippingOptions: {
           type: Array,
-          value: function () {
+          value: function() {
             return [];
           }
         },
@@ -171,10 +175,17 @@ Payment request API implementation
         shippingOptionSelected: {
           type: String
         },
+
+        shippingItem: {
+          type: Object,
+          value: function() {
+            return null;
+          }
+        },
+
         lastRequest: {
           type: Object,
           notify: true,
-          computed: '_computeRequest(methods.*, details.*, options.*)',
           observer: '_dispatchRequest'
         },
 
@@ -200,30 +211,34 @@ Payment request API implementation
       },
 
       observers: [
-        '_updateTotal(items.length)',
-        '_updateShippingOptions(shippingOptionSelected)'
+        '_updateTotal(items.length, shippingItem)',
+        '_updateShippingOptions(shippingOptionSelected)',
+        '_updateLastRequest(methods.*, details.*, options.*)'
         //'checkCanMakePayment(lastRequest)'
       ],
 
-      attached: function () {
-        this._updatePropertiesFromNodes();
+      attached: function() {
+        Polymer.RenderStatus.afterNextRender(this, this._updatePropertiesFromNodes);
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         this.listen(buyButton, 'tap', 'buyButtonTap');
+        this.onShippingAddressChange = this.onShippingAddressChange.bind(this);
+        this.onShippingOptionChange = this.onShippingOptionChange.bind(this);
       },
 
-      detached: function () {
+      detached : function() {
         this.__unobserveNodes('methods');
         this.__unobserveNodes('items');
         this.__unobserveNodes('shippingOptions');
       },
 
-      _updatePropertiesFromNodes: function () {
+      _updatePropertiesFromNodes: function() {
         this.__observeNodes('methods');
         this.__observeNodes('items');
         this.__observeNodes('shippingOptions');
       },
 
-      __updatePropertyFromNodes: function (property, observerInfo) {
+      __updatePropertyFromNodes: function(observerInfo) {
+        var property = observerInfo.target.id;
         if (!observerInfo) {
           observerInfo = {
             target: this.$[property],
@@ -233,51 +248,52 @@ Payment request API implementation
           this.splice(property, 0, this[property].length - 1);
         }
         // Add items from added nodes
-        observerInfo.addedNodes.filter(this._isElementNode).forEach(function (node) {
+        observerInfo.addedNodes.filter(this._isElementNode).forEach(function(node) {
           this.splice(property, this[property].length, 0, node.dictionary);
         }.bind(this));
         // Remove items from removed nodes
-        observerInfo.removedNodes.filter(this._isElementNode).forEach(function (node) {
+        observerInfo.removedNodes.filter(this._isElementNode).forEach(function(node) {
           this.splice(property, this[property].indexOf(node.dictionary), 1);
         }.bind(this));
       },
 
       _isElementNode: function(node) {
-        return (node.nodeType === Node.ELEMENT_NODE);
+        return (node.nodeType === Node.ELEMENT_NODE && node.dictionary);
       },
 
-      __observerNode: function (node) {
+      __observerNode: function(node) {
         return '_' + node + 'Observer';
       },
 
-      __observeNodes: function (property) {
+      __observeNodes: function(property) {
         // Watch for future updates.
         if (!this[this.__observerNode(property)]) {
-          this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNodes.bind(this, property));
+          //this[this.__observerNode(property)] = new Polymer.FlattenedNodesObserver(this.$[property], this.__updatePropertyFromNodes.bind(this));
+          this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNodes.bind(this));
         }
       },
 
-      __unobserveNodes: function (property) {
+      __unobserveNodes: function(property) {
         if (this[this.__observerNode(property)]) {
           Polymer.dom(this).unobserveNodes(this[this.__observerNode(property)]);
         }
       },
 
-      _updateTotal: function () {
+      _updateTotal: function() {
         var totalDom = Polymer.dom(this.$.total);
         var total = totalDom.getDistributedNodes()[0];
         if (!total) {
-          total = this.create('payment-item');
+          total = this.create('payment-item', {slot: 'total'});
           totalDom.appendChild(total);
           this.importHref('../payment-item.html', this._updateTotal.bind(this), console.error.bind(console), true);
           return;
         }
-        var currency = this.items.length ?
+        var currency = this.items.length && this.items[0]?
           this.items[0].amount.currency :
           this.currency;
         var value = 0;
         for (var i = 0; i < this.items.length; i++) {
-          value += this.items[i].amount.value;
+          value += this.items[i] ? this.items[i].amount.value : 0;
         }
         total.label = this.label || 'Total';
         total.value = value;
@@ -286,14 +302,14 @@ Payment request API implementation
         this._setTotal(total.dictionary);
       },
 
-      _computeDetails: function (total, items) {
+      _computeDetails: function(total, items, shippingItem) {
         return {
           total: total,
-          displayItems: items
+          displayItems: shippingItem ? items.concat(shippingItem): items
         };
       },
 
-      _computeOptions: function (payerName, payerEmail, payerPhone, shipping, shippingType) {
+      _computeOptions: function(payerName, payerEmail, payerPhone, shipping, shippingType) {
         return {
           requestPayerName: payerName,
           requestPayerEmail: payerEmail,
@@ -309,26 +325,44 @@ Payment request API implementation
        *
        * @return  {PaymentRequest}
        */
-      _computeRequest: function (methods, details, options) {
+      _updateLastRequest: function(methods, details, options) {
         methods = methods.base;
         details = details.base;
         options = options.base;
-        var request = null;
+        this.updateLastRequest(methods, details, options);
+      },
+
+      updateLastRequest: function(methods, details, options) {
+        methods = methods || this.methods;
+        details = details || this.details;
+        options = options || this.options;
         if (methods && methods.length && window.PaymentRequest) {
-          request = new PaymentRequest(methods, details, options);
-          if (this.shipping) {
-            request.addEventListener('shippingaddresschange', this.onShippingAddressChange.bind(this));
-            request.addEventListener('shippingoptionchange', this.onShippingOptionChange.bind(this));
-          }
+          this.lastRequest = new PaymentRequest(methods, details, options);
+          this.addRequestListeners();
+        } else {
+          this.lastRequest = null;
         }
-        return request;
+      },
+
+      addRequestListeners: function() {
+        if (this.shipping) {
+          this.lastRequest.addEventListener('shippingaddresschange', this.onShippingAddressChange);
+          this.lastRequest.addEventListener('shippingoptionchange', this.onShippingOptionChange);
+        }
+      },
+
+      removeRequestListeners: function() {
+        if (this.shipping) {
+          this.lastRequest.removeEventListener('shippingaddresschange', this.onShippingAddressChange);
+          this.lastRequest.removeEventListener('shippingoptionchange', this.onShippingOptionChange);
+        }
       },
 
       /**
        * Method executed when payButton is tapped.
        * You can override it to do something more complex.
        */
-      buyButtonTap: function () {
+      buyButtonTap: function() {
         if ('PaymentRequest' in window) {
           this.show();
         } else {
@@ -343,7 +377,7 @@ Payment request API implementation
        *
        * @return {Promise}
        */
-      checkCanMakePayment: function (lastRequest) {
+      checkCanMakePayment: function(lastRequest) {
         var promise;
         if (lastRequest && lastRequest.canMakePayment) {
           promise = lastRequest.canMakePayment()
@@ -351,7 +385,7 @@ Payment request API implementation
             .then(this._setLastError.bind(this, null))
             .catch(this._setLastError.bind(this));
         } else {
-          promise = new Promise(function (resolve, reject) {
+          promise = new Promise(function(resolve, reject) {
             resolve();
           });
         }
@@ -363,29 +397,29 @@ Payment request API implementation
        *
        * @return {Promise}
        */
-      show: function () {
+      show: function() {
         return this.lastRequest.show()
+          .then(this._setLastResponse.bind(this))
           .catch(this._setLastError.bind(this))
-          .catch(this._updateTotal.bind(this))
-          .then(this._setLastResponse.bind(this));
+          .then(this.updateLastRequest.bind(this));
       },
 
       /**
        * Abort the payment request
        * @return {Promise}
        */
-      abort: function () {
+      abort: function() {
         var promise;
         if (this.lastRequest) {
           promise = this.lastRequest.abort()
-            .then(function () {
+            .then(function() {
               this._setLastResponse(null);
               this.dispatchEvent(
                 new CustomEvent('aborted')
               );
             }.bind(this));
         } else {
-          promise = new Promise(function (resolve, reject) {
+          promise = new Promise(function(resolve, reject) {
             resolve('There aren\'t any active request');
           });
         }
@@ -393,51 +427,44 @@ Payment request API implementation
           .catch(this._setLastError.bind(this));
       },
 
-      onShippingAddressChange: function (evt) {
+      onShippingAddressChange: function(evt) {
         evt.updateWith(this.updateWithShippingAddress(evt));
       },
 
-      onShippingOptionChange: function (evt) {
+      onShippingOptionChange: function(evt) {
         evt.updateWith(this.updateWithShippingOptions(evt));
       },
 
-      updateWithShippingAddress: function (evt) {
+      updateWithShippingAddress: function(evt) {
         this.changeShippingOption(evt.target.shippingOption);
         this._updateTotal();
         this._updateShippingOptions();
         return Promise.resolve(this.details);
       },
 
-      updateWithShippingOptions: function (evt) {
+      updateWithShippingOptions: function(evt) {
         this.changeShippingOption(evt.target.shippingOption);
         this._updateTotal();
         this._updateShippingOptions();
         return Promise.resolve(this.details);
       },
 
-      changeShippingOption: function (shippingOption) {
+      changeShippingOption: function(shippingOption) {
         shippingOption = shippingOption || this.$.shippingOptionsSelector.selected;
-        // Remove last shipping option from displayed items
-        if (this.$.shippingOptionsSelector.selectedItem) {
-          var index = this.items.indexOf(this.$.shippingOptionsSelector.selectedItem.dictionary);
-          if (index !== -1) {
-            this.splice('items', index, 1);
-          }
-        }
         // Add shipping option to displayed items
         if (shippingOption) {
           this.$.shippingOptionsSelector.select(shippingOption);
-          this.push('items', this.$.shippingOptionsSelector.selectedItem.dictionary);
+          this.shippingItem = this.$.shippingOptionsSelector.selectedItem.dictionary;
         }
       },
 
-      _updateShippingOptions: function () {
-        this.details.shippingOptions = this.$.shippingOptionsSelector.items.map(function (item) {
+      _updateShippingOptions: function() {
+        this.set('details.shippingOptions', this.$.shippingOptionsSelector.items.map(function(item) {
           return item.dictionary;
-        });
+        }));
       },
 
-      _dispatchError: function (error) {
+      _dispatchError: function(error) {
         if (error) {
           console.error(error);
           this.dispatchEvent(
@@ -449,7 +476,7 @@ Payment request API implementation
         return error;
       },
 
-      _dispatchResponse: function (response) {
+      _dispatchResponse: function(response) {
         if (response !== null) {
           this.dispatchEvent(
             new CustomEvent('response', {
@@ -460,7 +487,7 @@ Payment request API implementation
         return response;
       },
 
-      _dispatchRequest: function (request) {
+      _dispatchRequest: function(request) {
         this.dispatchEvent(
           new CustomEvent('request', {
             detail: request

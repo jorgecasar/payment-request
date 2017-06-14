@@ -11,67 +11,81 @@
 
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
-    <link rel="import" href="../../paper-button/paper-button.html">
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+    <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
     <link rel="import" href="../../paper-listbox/paper-listbox.html">
     <link rel="import" href="../../paper-item/paper-item.html">
-    <link rel="import" href="../../paper-header-panel/paper-header-panel.html">
-    <link rel="import" href="../../paper-toolbar/paper-toolbar.html">
     <link rel="import" href="../../paper-toast/paper-toast.html">
-    <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+    <link rel="import" href="../../app-layout/app-header-layout/app-header-layout.html">
+    <link rel="import" href="../../app-layout/app-header/app-header.html">
+    <link rel="import" href="../../app-layout/app-toolbar/app-toolbar.html">
 
+    <link rel="import" href="./demo-icons.html">
     <link rel="import" href="../payment-request-all.html">
 
-    <style is="custom-style" include="iron-flex">
-      body {
-        margin:0
-        @apply(--paper-font-subhead);
-        margin:0;
-      }
-      .note {
-        padding: 0.5vh 1vw;
-        margin:0;
-        text-align: center;
-        background: darkorange;
-        color: white;
-      }
-      paper-header-panel {
-        width: 100vw;
-        height: 46vh;
-        @apply(--shadow-elevation-2dp);
-      }
-      paper-toolbar {
-        --paper-toolbar-background: darkgreen
-      }
-      #toast {
-        --paper-toast-background-color: red;
-        --paper-toast-color: white;
-      }
-      #toast paper-icon-button {
-        position: absolute;
-        top:0.5em;
-        right:0;
-      }
-      @media (min-width: 1024px) {
-        paper-header-panel {
-          width: 48vw;
-          height: 94vh;
-          margin: 1vh 1vw;
+    <custom-style>
+      <style is="custom-style" include="iron-flex">
+        html {
+          @apply(--paper-font-subhead);
         }
-      }
-    </style>
+
+        body {
+          margin:0;
+        }
+        .note {
+          padding: 0.5vh 1vw;
+          margin:0;
+          text-align: center;
+          background: darkorange;
+          color: white;
+        }
+        app-header-layout {
+          width: 100vw;
+          height: 46vh;
+          margin: 0;
+        }
+
+        app-toolbar {
+          background: darkgreen;
+          color: white;
+        }
+        #toast {
+          --paper-toast-background-color: red;
+          --paper-toast-color: white;
+        }
+        #toast paper-icon-button {
+          position: absolute;
+          top:0.5em;
+          right:0;
+        }
+        @media (min-width: 1024px) {
+          app-header-layout {
+            width: 48vw;
+            height: 90vh;
+            margin: 1vh 1vw;
+            @apply(--shadow-elevation-2dp);
+          }
+        }
+      </style>
+    </custom-style>
   </head>
   <body>
-    <template is="dom-bind" id="demo">
+    <dom-bind id="demo">
+    <template is="dom-bind">
       <paper-toast id="toast" class="fit-bottom" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
         <paper-icon-button icon="close" onclick="toast.toggle()"></paper-icon-button>
       </paper-toast>
-      <p class="note">This is a demo, it's not a real purchase. <br/>The payment data don't leave your browser.</p>
+
+      <p class="note">Your data don't leave your browser.<br> We recomend use <a href="https://www.paypalobjects.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm" target="_blank">test credit card account numbers</a></p>
+
       <div class="layout horizontal wrap">
-        <paper-header-panel>
-          <paper-toolbar>
-            <paper-icon-button icon="android"></paper-icon-button>
-            <h1 class="title">Shop</h1>
-          </paper-toolbar>
+        <app-header-layout has-scrolling-region>
+          <app-header slot="header" fixed condenses>
+            <app-toolbar>
+              <paper-icon-button icon="demo:android"></paper-icon-button>
+              <div main-title>Shop</div>
+            </app-toolbar>
+          </app-header>
           <div>
             <paper-listbox multi selected-items="{{selectedItems}}">
             <template is="dom-repeat" items="[[items]]">
@@ -79,41 +93,42 @@
             </template>
             </paper-listbox>
           </div>
-        </paper-header-panel>
+        </app-header-layout>
 
-        <paper-header-panel>
-          <paper-toolbar>
-            <paper-icon-button icon="shopping-cart"></paper-icon-button>
-            <h1 class="title">Your Cart ([[localeCurrency(total.amount.value, total.amount.currency)]])</h1>
-            <payment-request
-              class="right"
-              label="Total"
-              currency="[[currency]]"
-              items="{{displayItems}}"
-              total="{{total}}"
-              last-error="{{lastError}}"
-              last-response="{{paymentResponse}}"
-              on-last-response-changed="parseResponse"
-              shipping-option-selected="expressShipping"
-              shipping
-              >
-              <payment-method
-                supported='["basic-card"]'
-                data='{
-                  "supportedNetwork": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"],
-                  "supportedTypes": ["debit", "credit", "prepaid"]
-                }'></payment-method>
-              <payment-method
-                supported='["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"]'></payment-method>
-              <template is="dom-repeat" items="{{selectedItems}}">
-                <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
-              </template>
+        <app-header-layout has-scrolling-region>
+          <app-header slot="header" fixed condenses>
+            <app-toolbar>
+              <paper-icon-button icon="demo:shopping-cart"></paper-icon-button>
+              <div main-title>Your Cart ([[localeCurrency(total.amount.value, total.amount.currency)]])</div>
+              <payment-request
+                class="right"
+                label="Total"
+                currency="[[currency]]"
+                items="{{displayItems}}"
+                total="{{total}}"
+                last-error="{{lastError}}"
+                last-response="{{paymentResponse}}"
+                on-last-response-changed="parseResponse"
+                shipping-option-selected="{{shippingOptionSelected}}"
+                shipping
+                >
+                <payment-method
+                  slot="method"
+                  supported='["basic-card"]'
+                  data='{
+                    "supportedNetwork": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"],
+                    "supportedTypes": ["debit", "credit", "prepaid"]
+                  }'></payment-method>
+                <template is="dom-repeat" items="{{selectedItems}}">
+                  <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
+                </template>
 
-              <payment-shipping-option id="standardShipping" label="Standard" currency="[[currency]]" value="0"></payment-shipping-option>
-              <payment-shipping-option id="expressShipping" label="Express" currency="[[currency]]" value="10"></payment-shipping-option>
-              <paper-icon-button id="buyButton" icon="payment"></paper-icon-button>
-            </payment-request>
-          </paper-toolbar>
+                <payment-shipping-option slot="shipping-option" id="standardShipping" label="Standard" currency="[[currency]]" value="0"></payment-shipping-option>
+                <payment-shipping-option slot="shipping-option" id="expressShipping" label="Express" currency="[[currency]]" value="10"></payment-shipping-option>
+                <paper-icon-button slot="button" id="buyButton" icon="demo:payment"></paper-icon-button>
+              </payment-request>
+            </app-toolbar>
+          </app-header>
           <div>
             <div hidden$="[[responseParsed]]">
               <template is="dom-repeat" items="[[displayItems]]">
@@ -124,13 +139,21 @@
               <pre>[[responseParsed]]</pre>
             </div>
           </div>
-        </paper-header-panel>
+        </app-header-layout>
       </div>
     </template>
+    </dom-bind>
+
     <script>
       var demoApp = document.getElementById('demo');
+      if (Polymer.Element) {
+        Polymer.importHref('../../polymer/lib/elements/custom-style.html');
+      } else {
+        demoApp = demoApp.querySelector('template');
+      }
       demoApp.responseParsed = null;
       demoApp.selectedItems = [];
+      demoApp.shippingOptionSelected = 'expressShipping';
       demoApp.currency = 'EUR'
       demoApp.items = [
         {label: "Apple Pie", value: 1},
@@ -150,11 +173,9 @@
       ];
       demoApp.parseResponse = function(evt) {
         var paymentResponse = evt.detail.value;
-        setTimeout(function(){
-          // Make your request to server for a real purchase.
-          paymentResponse.complete('success');
-        }, 3000);
+        paymentResponse.complete('success');
         demoApp.responseParsed = paymentResponse ? JSON.stringify(paymentResponse, null, '  ') : false;
+        demoApp.selectedItems = [];
       }
 
       demoApp.localeCurrency = function(amount, currency) {
