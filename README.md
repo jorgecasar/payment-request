@@ -38,10 +38,11 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 	```
 	<custom-element-demo>
 		<template>
-		<base href="https://user-content-dot-custom-elements.appspot.com/jorgecasar/payment-request/bb725682888fabeab331f4be9dd8f0ed324f8048/payment-request/">
-		<script src="../webcomponentsjs/webcomponents-lite.js"></script>
-		<link rel="import" href="payment-request.html">
-		<next-code-block></next-code-block>
+			<script src="../webcomponentsjs/webcomponents-lite.js"></script>
+			<link rel="import" href="payment-request.html">
+			<link rel="import" href="payment-method.html">
+			<link rel="import" href="payment-item.html">
+			<next-code-block></next-code-block>
 		</template>
 	</custom-element-demo>
 	```
@@ -59,6 +60,14 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 		<payment-item class="item" label="Item 1" currency="EUR" value="1337"></payment-item>
 		<button id="buyButton">Buy</button>
 	</payment-request>
+	<script>
+	function onLastResponseChange(evt) {
+		var paymentResponse = evt.detail.value;
+			paymentResponse.complete('success');
+		}
+		var paymentRequestElement = document.querySelector('payment-request');
+		paymentRequestElement.addEventListener('last-response-change', onLastResponseChange);
+	</script>
 	```
 
 4. Validate payment data and complete payment request.
