@@ -34,40 +34,15 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 
 3. Start using it!
 
-	<!--
-	```
-	<custom-element-demo>
-		<template>
-			<script src="../webcomponentsjs/webcomponents-lite.js"></script>
-			<link rel="import" href="payment-request.html">
-			<link rel="import" href="payment-method.html">
-			<link rel="import" href="payment-item.html">
-			<next-code-block></next-code-block>
-		</template>
-	</custom-element-demo>
-	```
-	-->
 	```html
-	<payment-request
-		label="Total"
-		currency="EUR"
-		shipping
-		>
-		<payment-method supported='["basic-card"]' data='{
+	<payment-request label="Total" currency="EUR">
+		<payment-method slot="method" supported='["basic-card"]' data='{
 				"supportedNetwork": ["amex", "mastercard", "visa" ],
 				"supportedTypes": ["debit", "credit"]
-			}'></payment-method>
-		<payment-item class="item" label="Item 1" currency="EUR" value="1337"></payment-item>
+		}'></payment-method>
+		<payment-item label="Item 1" currency="EUR" value="1337"></payment-item>
 		<button id="buyButton">Buy</button>
 	</payment-request>
-	<script>
-	function onLastResponseChange(evt) {
-		var paymentResponse = evt.detail.value;
-			paymentResponse.complete('success');
-		}
-		var paymentRequestElement = document.querySelector('payment-request');
-		paymentRequestElement.addEventListener('last-response-change', onLastResponseChange);
-	</script>
 	```
 
 4. Validate payment data and complete payment request.
