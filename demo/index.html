@@ -145,10 +145,8 @@
     </dom-bind>
 
     <script>
-      debugger;
       (function(window) {
         function inIframe () {
-          debugger;
           try {
             return window.self !== window.top;
           } catch (e) {
@@ -156,7 +154,8 @@
           }
         }
         if (inIframe()) {
-          return window.top.history.replaceState({}, 'jorgecasar/payment-request demo', "https://jorgecasar.github.io/payment-request/components/payment-request/demo/");
+          window.top.location.href = "https://jorgecasar.github.io/payment-request/components/payment-request/demo/";
+          return
         }
         var demoApp = document.getElementById('demo');
         if (Polymer.Element) {
