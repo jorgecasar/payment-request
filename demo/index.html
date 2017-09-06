@@ -156,8 +156,7 @@
           }
         }
         if (inIframe()) {
-          window.top.location.href = "https://jorgecasar.github.io/payment-request/components/payment-request/demo/";
-          return;
+          return window.top.history.replaceState({}, 'jorgecasar/payment-request demo', "https://jorgecasar.github.io/payment-request/components/payment-request/demo/");
         }
         var demoApp = document.getElementById('demo');
         if (Polymer.Element) {
