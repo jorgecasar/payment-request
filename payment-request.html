@@ -213,8 +213,8 @@ Payment request API implementation
       observers: [
         '_updateTotal(items.length, shippingItem)',
         '_updateShippingOptions(shippingOptionSelected)',
-        '_updateLastRequest(methods.*, details.*, options.*)'
-        //'checkCanMakePayment(lastRequest)'
+        '_updateLastRequest(methods.*, details.*, options.*)',
+        'checkCanMakePayment(methods, lastRequest)'
       ],
 
       attached: function() {
@@ -285,7 +285,7 @@ Payment request API implementation
         if (!total) {
           total = this.create('payment-item', {slot: 'total'});
           totalDom.appendChild(total);
-          this.importHref('../payment-item.html', this._updateTotal.bind(this), console.error.bind(console), true);
+          this.importHref('../payment-item.html', this._updateTotal.bind(this), null, true);
           return;
         }
         var currency = this.items.length && this.items[0]?
@@ -295,9 +295,12 @@ Payment request API implementation
         for (var i = 0; i < this.items.length; i++) {
           value += this.items[i] ? this.items[i].amount.value : 0;
         }
+        if (this.shippingItem) {
+          value += this.shippingItem.amount.value;
+        }
         total.label = this.label || 'Total';
-        total.value = value;
-        total.currency = currency;
+        total.value = value || 0;
+        total.currency = currency || 'EUR';
 
         this._setTotal(total.dictionary);
       },
@@ -336,7 +339,10 @@ Payment request API implementation
         methods = methods || this.methods;
         details = details || this.details;
         options = options || this.options;
-        if (methods && methods.length && window.PaymentRequest) {
+        if (methods.length &&
+            details.displayItems.length &&
+            details.total.amount.currency &&
+            window.PaymentRequest) {
           this.lastRequest = new PaymentRequest(methods, details, options);
           this.addRequestListeners();
         } else {
@@ -377,9 +383,9 @@ Payment request API implementation
        *
        * @return {Promise}
        */
-      checkCanMakePayment: function(lastRequest) {
+      checkCanMakePayment: function(methods, lastRequest) {
         var promise;
-        if (lastRequest && lastRequest.canMakePayment) {
+        if (methods.length && lastRequest && lastRequest.canMakePayment) {
           promise = lastRequest.canMakePayment()
             .then(this.set.bind(this, 'lastCanMakePayment'))
             .then(this._setLastError.bind(this, null))
@@ -398,10 +404,22 @@ Payment request API implementation
        * @return {Promise}
        */
       show: function() {
-        return this.lastRequest.show()
-          .then(this._setLastResponse.bind(this))
-          .catch(this._setLastError.bind(this))
-          .then(this.updateLastRequest.bind(this));
+        if (this.lastRequest) {
+          return this.lastRequest.show()
+            .then(this._setLastResponse.bind(this))
+            .catch(this._setLastError.bind(this))
+            .then(this.updateLastRequest.bind(this));
+        } else {
+          var detail;
+          if (!this.methods.length) {
+            detail = 'There aren\'t payment methods';
+          } else if (!this.details.displayItems.length) {
+            detail = 'There aren\'t items to pay';
+          } else {
+            detail = 'Payment Request wasn\'t be created';
+          }
+          this._setLastError({ detail: detail });
+        }
       },
 
       /**
@@ -466,7 +484,6 @@ Payment request API implementation
 
       _dispatchError: function(error) {
         if (error) {
-          console.error(error);
           this.dispatchEvent(
             new CustomEvent('error', {
               detail: error
