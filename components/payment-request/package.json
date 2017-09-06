@@ -1,0 +1,28 @@
+{
+  "name": "payment-request",
+  "version": "1.0.0",
+  "description": "Payment request API implementation in Polymer",
+  "main": "index.html",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "polymer test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jorgecasar/payment-request.git"
+  },
+  "keywords": [
+    "payment",
+    "polymer",
+    "web",
+    "components"
+  ],
+  "author": "Jorge del Casar <jorge.casar@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jorgecasar/payment-request/issues"
+  },
+  "homepage": "https://github.com/jorgecasar/payment-request#readme"
+}

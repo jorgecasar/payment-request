@@ -1,0 +1,84 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="payment-shipping-option">
+  <template>
+    <style>
+       :host {
+        display: none;
+      }
+    </style>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'payment-shipping-option',
+      properties: {
+
+        id: String,
+        /**
+         * This is a human-readable description of the item.
+         * The user agent may display this to the user.
+         */
+        label: String,
+        /**
+         * A valid decimal monetary value containing a monetary amount of the item.
+         */
+        value: Number,
+        /**
+         * A string containing a currency identifier of the item.
+         * The value of currency can be any string that is valid within
+         * the currency system indicated by currencySystem.
+         */
+        currency: String,
+
+        /**
+         * A URL that indicates the currency system
+         * that the currency identifier belongs to
+         */
+        currencySystem: {
+          type: String,
+          value: 'urn:iso:std:iso:4217'
+        },
+
+        /**
+         * Contain the monetary amount for the item.
+         */
+        amount: {
+          type: Object,
+          readOnly: true,
+          computed: '_computeAmount(value, currency, currencySystem)'
+        },
+
+        /**
+         * This is set to true to indicate that this is the default
+         * selected PaymentShippingOption in a sequence
+         */
+        selected: {
+          type: Boolean,
+          value: false
+        },
+
+        dictionary: {
+          type: Object,
+          computed: '_computeDictionary(id, label, amount, selected)'
+        }
+      },
+      _computeAmount: function (value, currency, currencySystem) {
+        return {
+          value: value,
+          currency: currency,
+          currencySystem: currencySystem
+        };
+      },
+
+      _computeDictionary: function (id, label, amount, selected) {
+        return {
+          id: id,
+          label: label,
+          amount: amount,
+          selected: selected
+        };
+      }
+    });
+  </script>
+</dom-module>

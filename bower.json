@@ -1,0 +1,77 @@
+{
+  "name": "payment-request",
+  "description": "Payment request API implementation in Polymer",
+  "version": "1.0.0",
+  "main": "payment-request-all.html",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jorgecasar/payment-request.git"
+  },
+  "homepage": "https://github.com/jorgecasar/payment-request",
+  "demos": {
+    "Demo": "https://jorgecasar.github.io/payment-request/components/payment-request/demo/"
+  },
+  "authors": [
+    "Jorge del Casar <jorge.casar@gmail.com>"
+  ],
+  "keywords": [
+    "webcomponents",
+    "polymer",
+    "payment-request",
+    "payments"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "test"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#1.9 - 2",
+    "iron-selector": "PolymerElements/iron-selector#1 - 2"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#1 - 2",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#1 - 2",
+    "paper-button": "PolymerElements/paper-button#1 - 2",
+    "paper-icon-button": "PolymerElements/paper-icon-button#1 - 2",
+    "paper-listbox": "PolymerElements/paper-listbox#1 - 2",
+    "paper-item": "PolymerElements/paper-item#1 - 2",
+    "paper-toolbar": "PolymerElements/paper-toolbar#1 - 2",
+    "paper-toast": "PolymerElements/paper-toast##1 - 2",
+    "app-layout": "PolymerElements/app-layout#1 - 2",
+    "web-component-tester": "^6.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"
+  },
+  "resolutions": {
+    "webcomponentsjs": "^1.0.0",
+    "iron-meta": "^2.0.0"
+  },
+  "variants": {
+    "1.x": {
+      "dependencies": {
+        "polymer": "Polymer/polymer#^1.9",
+        "promise-polyfill": "polymerlabs/promise-polyfill#^1.0.0"
+      },
+      "devDependencies": {
+        "iron-component-page": "PolymerElements/iron-component-page#1 - 2",
+        "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+        "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.0.0",
+        "paper-button": "PolymerElements/paper-button#^1.0.0",
+        "paper-icon-button": "PolymerElements/paper-icon-button#^1.0.0",
+        "paper-listbox": "PolymerElements/paper-listbox#^1.0.0",
+        "paper-item": "PolymerElements/paper-item#^1.0.0",
+        "paper-toolbar": "PolymerElements/paper-toolbar#^1.0.0",
+        "app-layout": "PolymerElements/app-layout#^1.0.0",
+        "paper-toast": "PolymerElements/paper-toast##^1.0.0",
+        "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+        "web-component-tester": "Polymer/web-component-tester#^4.0.0"
+      },
+      "resolutions": {
+        "promise-polyfill": "^1.0.0",
+        "webcomponentsjs": "^0.7"
+      }
+    }
+  }
+}

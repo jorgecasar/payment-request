@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>payment-request demo</title>
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="https://storage.googleapis.com/prshim/v1/payment-shim.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+    <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="../../paper-listbox/paper-listbox.html">
+    <link rel="import" href="../../paper-item/paper-item.html">
+    <link rel="import" href="../../paper-toast/paper-toast.html">
+    <link rel="import" href="../../app-layout/app-header-layout/app-header-layout.html">
+    <link rel="import" href="../../app-layout/app-header/app-header.html">
+    <link rel="import" href="../../app-layout/app-toolbar/app-toolbar.html">
+
+    <link rel="import" href="./demo-icons.html">
+    <link rel="import" href="../payment-request-all.html">
+
+    <custom-style>
+      <style is="custom-style" include="iron-flex">
+        html {
+          @apply(--paper-font-subhead);
+        }
+
+        body {
+          margin:0;
+        }
+        .note {
+          padding: 0.5vh 1vw;
+          margin:0;
+          text-align: center;
+          background: darkorange;
+          color: white;
+        }
+        app-header-layout {
+          width: 100vw;
+          height: 46vh;
+          margin: 0;
+        }
+
+        app-toolbar {
+          background: darkgreen;
+          color: white;
+        }
+        #toast {
+          --paper-toast-background-color: red;
+          --paper-toast-color: white;
+        }
+        #toast paper-icon-button {
+          position: absolute;
+          top:0.5em;
+          right:0;
+        }
+        @media (min-width: 1024px) {
+          app-header-layout {
+            width: 48vw;
+            height: 90vh;
+            margin: 1vh 1vw;
+            @apply(--shadow-elevation-2dp);
+          }
+        }
+      </style>
+    </custom-style>
+  </head>
+  <body>
+    <dom-bind id="demo">
+      <template is="dom-bind">
+        <paper-toast id="toast" class="fit-bottom" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
+          <paper-icon-button icon="close" onclick="toast.toggle()"></paper-icon-button>
+        </paper-toast>
+
+        <p class="note">Your data don't leave your browser.<br> We recomend use <a href="https://www.paypalobjects.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm" target="_blank">test credit card account numbers</a></p>
+
+        <div class="layout horizontal wrap">
+          <app-header-layout has-scrolling-region>
+            <app-header slot="header" fixed condenses>
+              <app-toolbar>
+                <paper-icon-button icon="demo:android"></paper-icon-button>
+                <div main-title>Shop</div>
+              </app-toolbar>
+            </app-header>
+            <div>
+              <paper-listbox multi selected-items="{{selectedItems}}">
+              <template is="dom-repeat" items="[[items]]">
+                <paper-item data="[[item]]">[[item.label]] - [[localeCurrency(item.value, currency)]]</paper-item>
+              </template>
+              </paper-listbox>
+            </div>
+          </app-header-layout>
+
+          <app-header-layout has-scrolling-region>
+            <app-header slot="header" fixed condenses>
+              <app-toolbar>
+                <paper-icon-button icon="demo:shopping-cart"></paper-icon-button>
+                <div main-title>Your Cart ([[localeCurrency(total.amount.value, total.amount.currency)]])</div>
+                <payment-request
+                  class="right"
+                  label="Total"
+                  currency="[[currency]]"
+                  items="{{displayItems}}"
+                  total="{{total}}"
+                  last-error="{{lastError}}"
+                  last-response="{{paymentResponse}}"
+                  on-last-response-changed="parseResponse"
+                  shipping-option-selected="{{shippingOptionSelected}}"
+                  shipping
+                  >
+                  <payment-method
+                    slot="method"
+                    supported='["basic-card"]'
+                    data='{
+                      "supportedNetwork": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"],
+                      "supportedTypes": ["debit", "credit", "prepaid"]
+                    }'></payment-method>
+                  <template is="dom-repeat" items="{{selectedItems}}">
+                    <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
+                  </template>
+
+                  <payment-shipping-option slot="shipping-option" id="standardShipping" label="Standard" currency="[[currency]]" value="0"></payment-shipping-option>
+                  <payment-shipping-option slot="shipping-option" id="expressShipping" label="Express" currency="[[currency]]" value="10"></payment-shipping-option>
+                  <paper-icon-button slot="button" id="buyButton" icon="demo:payment"></paper-icon-button>
+                </payment-request>
+              </app-toolbar>
+            </app-header>
+            <div>
+              <div hidden$="[[responseParsed]]">
+                <template is="dom-repeat" items="[[displayItems]]">
+                  <paper-item toggles data="[[item]]">[[item.label]] - [[localeCurrency(item.amount.value, item.amount.currency)]]</paper-item>
+                </template>
+              </div>
+              <div hidden$="[[!responseParsed]]">
+                <pre>[[responseParsed]]</pre>
+              </div>
+            </div>
+          </app-header-layout>
+        </div>
+      </template>
+    </dom-bind>
+
+    <script>
+      (function(window) {
+        function inIframe () {
+          try {
+            return window.self !== window.top;
+          } catch (e) {
+            return true;
+          }
+        }
+        if (inIframe()) {
+          window.top.location.href = "https://jorgecasar.github.io/payment-request/components/payment-request/demo/";
+          return
+        }
+        var demoApp = document.getElementById('demo');
+        if (Polymer.Element) {
+          Polymer.importHref('../../polymer/lib/elements/custom-style.html');
+        } else {
+          demoApp = demoApp.querySelector('template');
+        }
+        demoApp.responseParsed = null;
+        demoApp.selectedItems = [];
+        demoApp.shippingOptionSelected = 'expressShipping';
+        demoApp.currency = 'EUR'
+        demoApp.items = [
+          {label: "Apple Pie", value: 1},
+          {label: "Banana Bread", value: 2},
+          {label: "Cupcake", value: 3},
+          {label: "Donut", value: 4},
+          {label: "Eclair", value: 5},
+          {label: "Froyo", value: 8},
+          {label: "Gingerbread", value: 9},
+          {label: "Honeycomb", value: 11},
+          {label: "Ice Cream Sandwich", value: 14},
+          {label: "Jelly Bean", value: 16},
+          {label: "KitKat", value: 19},
+          {label: "Lollipop", value: 21},
+          {label: "Marshmallow", value: 23},
+          {label: "Nougat", value: 24}
+        ];
+        demoApp.parseResponse = function(evt) {
+          var paymentResponse = evt.detail.value;
+          paymentResponse.complete('success');
+          demoApp.responseParsed = paymentResponse ? JSON.stringify(paymentResponse, null, '  ') : false;
+          demoApp.selectedItems = [];
+        }
+
+        demoApp.localeCurrency = function(amount, currency) {
+          return amount.toLocaleString(navigator.language, { style: 'currency', currency: currency });
+        }
+      })(window);
+    </script>
+  </body>
+</html>
