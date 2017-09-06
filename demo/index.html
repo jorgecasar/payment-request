@@ -71,116 +71,131 @@
   </head>
   <body>
     <dom-bind id="demo">
-    <template is="dom-bind">
-      <paper-toast id="toast" class="fit-bottom" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
-        <paper-icon-button icon="close" onclick="toast.toggle()"></paper-icon-button>
-      </paper-toast>
+      <template is="dom-bind">
+        <paper-toast id="toast" class="fit-bottom" duration="0" text="[[lastError.detail]]" opened="[[lastError.detail]]">
+          <paper-icon-button icon="close" onclick="toast.toggle()"></paper-icon-button>
+        </paper-toast>
 
-      <p class="note">Your data don't leave your browser.<br> We recomend use <a href="https://www.paypalobjects.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm" target="_blank">test credit card account numbers</a></p>
+        <p class="note">Your data don't leave your browser.<br> We recomend use <a href="https://www.paypalobjects.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm" target="_blank">test credit card account numbers</a></p>
 
-      <div class="layout horizontal wrap">
-        <app-header-layout has-scrolling-region>
-          <app-header slot="header" fixed condenses>
-            <app-toolbar>
-              <paper-icon-button icon="demo:android"></paper-icon-button>
-              <div main-title>Shop</div>
-            </app-toolbar>
-          </app-header>
-          <div>
-            <paper-listbox multi selected-items="{{selectedItems}}">
-            <template is="dom-repeat" items="[[items]]">
-              <paper-item data="[[item]]">[[item.label]] - [[localeCurrency(item.value, currency)]]</paper-item>
-            </template>
-            </paper-listbox>
-          </div>
-        </app-header-layout>
-
-        <app-header-layout has-scrolling-region>
-          <app-header slot="header" fixed condenses>
-            <app-toolbar>
-              <paper-icon-button icon="demo:shopping-cart"></paper-icon-button>
-              <div main-title>Your Cart ([[localeCurrency(total.amount.value, total.amount.currency)]])</div>
-              <payment-request
-                class="right"
-                label="Total"
-                currency="[[currency]]"
-                items="{{displayItems}}"
-                total="{{total}}"
-                last-error="{{lastError}}"
-                last-response="{{paymentResponse}}"
-                on-last-response-changed="parseResponse"
-                shipping-option-selected="{{shippingOptionSelected}}"
-                shipping
-                >
-                <payment-method
-                  slot="method"
-                  supported='["basic-card"]'
-                  data='{
-                    "supportedNetwork": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"],
-                    "supportedTypes": ["debit", "credit", "prepaid"]
-                  }'></payment-method>
-                <template is="dom-repeat" items="{{selectedItems}}">
-                  <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
-                </template>
-
-                <payment-shipping-option slot="shipping-option" id="standardShipping" label="Standard" currency="[[currency]]" value="0"></payment-shipping-option>
-                <payment-shipping-option slot="shipping-option" id="expressShipping" label="Express" currency="[[currency]]" value="10"></payment-shipping-option>
-                <paper-icon-button slot="button" id="buyButton" icon="demo:payment"></paper-icon-button>
-              </payment-request>
-            </app-toolbar>
-          </app-header>
-          <div>
-            <div hidden$="[[responseParsed]]">
-              <template is="dom-repeat" items="[[displayItems]]">
-                <paper-item toggles data="[[item]]">[[item.label]] - [[localeCurrency(item.amount.value, item.amount.currency)]]</paper-item>
+        <div class="layout horizontal wrap">
+          <app-header-layout has-scrolling-region>
+            <app-header slot="header" fixed condenses>
+              <app-toolbar>
+                <paper-icon-button icon="demo:android"></paper-icon-button>
+                <div main-title>Shop</div>
+              </app-toolbar>
+            </app-header>
+            <div>
+              <paper-listbox multi selected-items="{{selectedItems}}">
+              <template is="dom-repeat" items="[[items]]">
+                <paper-item data="[[item]]">[[item.label]] - [[localeCurrency(item.value, currency)]]</paper-item>
               </template>
+              </paper-listbox>
             </div>
-            <div hidden$="[[!responseParsed]]">
-              <pre>[[responseParsed]]</pre>
+          </app-header-layout>
+
+          <app-header-layout has-scrolling-region>
+            <app-header slot="header" fixed condenses>
+              <app-toolbar>
+                <paper-icon-button icon="demo:shopping-cart"></paper-icon-button>
+                <div main-title>Your Cart ([[localeCurrency(total.amount.value, total.amount.currency)]])</div>
+                <payment-request
+                  class="right"
+                  label="Total"
+                  currency="[[currency]]"
+                  items="{{displayItems}}"
+                  total="{{total}}"
+                  last-error="{{lastError}}"
+                  last-response="{{paymentResponse}}"
+                  on-last-response-changed="parseResponse"
+                  shipping-option-selected="{{shippingOptionSelected}}"
+                  shipping
+                  >
+                  <payment-method
+                    slot="method"
+                    supported='["basic-card"]'
+                    data='{
+                      "supportedNetwork": ["amex", "diners", "discover", "jcb", "mastercard", "unionpay", "visa", "mir"],
+                      "supportedTypes": ["debit", "credit", "prepaid"]
+                    }'></payment-method>
+                  <template is="dom-repeat" items="{{selectedItems}}">
+                    <payment-item class="item" label="[[item.data.label]]" currency="[[currency]]" value="[[item.data.value]]"></payment-item>
+                  </template>
+
+                  <payment-shipping-option slot="shipping-option" id="standardShipping" label="Standard" currency="[[currency]]" value="0"></payment-shipping-option>
+                  <payment-shipping-option slot="shipping-option" id="expressShipping" label="Express" currency="[[currency]]" value="10"></payment-shipping-option>
+                  <paper-icon-button slot="button" id="buyButton" icon="demo:payment"></paper-icon-button>
+                </payment-request>
+              </app-toolbar>
+            </app-header>
+            <div>
+              <div hidden$="[[responseParsed]]">
+                <template is="dom-repeat" items="[[displayItems]]">
+                  <paper-item toggles data="[[item]]">[[item.label]] - [[localeCurrency(item.amount.value, item.amount.currency)]]</paper-item>
+                </template>
+              </div>
+              <div hidden$="[[!responseParsed]]">
+                <pre>[[responseParsed]]</pre>
+              </div>
             </div>
-          </div>
-        </app-header-layout>
-      </div>
-    </template>
+          </app-header-layout>
+        </div>
+      </template>
     </dom-bind>
 
     <script>
-      var demoApp = document.getElementById('demo');
-      if (Polymer.Element) {
-        Polymer.importHref('../../polymer/lib/elements/custom-style.html');
-      } else {
-        demoApp = demoApp.querySelector('template');
-      }
-      demoApp.responseParsed = null;
-      demoApp.selectedItems = [];
-      demoApp.shippingOptionSelected = 'expressShipping';
-      demoApp.currency = 'EUR'
-      demoApp.items = [
-        {label: "Apple Pie", value: 1},
-        {label: "Banana Bread", value: 2},
-        {label: "Cupcake", value: 3},
-        {label: "Donut", value: 4},
-        {label: "Eclair", value: 5},
-        {label: "Froyo", value: 8},
-        {label: "Gingerbread", value: 9},
-        {label: "Honeycomb", value: 11},
-        {label: "Ice Cream Sandwich", value: 14},
-        {label: "Jelly Bean", value: 16},
-        {label: "KitKat", value: 19},
-        {label: "Lollipop", value: 21},
-        {label: "Marshmallow", value: 23},
-        {label: "Nougat", value: 24}
-      ];
-      demoApp.parseResponse = function(evt) {
-        var paymentResponse = evt.detail.value;
-        paymentResponse.complete('success');
-        demoApp.responseParsed = paymentResponse ? JSON.stringify(paymentResponse, null, '  ') : false;
+      debugger;
+      (function(window) {
+        function inIframe () {
+          debugger;
+          try {
+            return window.self !== window.top;
+          } catch (e) {
+            return true;
+          }
+        }
+        if (inIframe()) {
+          window.top.location.href = "https://jorgecasar.github.io/payment-request/components/payment-request/demo/";
+          return;
+        }
+        var demoApp = document.getElementById('demo');
+        if (Polymer.Element) {
+          Polymer.importHref('../../polymer/lib/elements/custom-style.html');
+        } else {
+          demoApp = demoApp.querySelector('template');
+        }
+        demoApp.responseParsed = null;
         demoApp.selectedItems = [];
-      }
+        demoApp.shippingOptionSelected = 'expressShipping';
+        demoApp.currency = 'EUR'
+        demoApp.items = [
+          {label: "Apple Pie", value: 1},
+          {label: "Banana Bread", value: 2},
+          {label: "Cupcake", value: 3},
+          {label: "Donut", value: 4},
+          {label: "Eclair", value: 5},
+          {label: "Froyo", value: 8},
+          {label: "Gingerbread", value: 9},
+          {label: "Honeycomb", value: 11},
+          {label: "Ice Cream Sandwich", value: 14},
+          {label: "Jelly Bean", value: 16},
+          {label: "KitKat", value: 19},
+          {label: "Lollipop", value: 21},
+          {label: "Marshmallow", value: 23},
+          {label: "Nougat", value: 24}
+        ];
+        demoApp.parseResponse = function(evt) {
+          var paymentResponse = evt.detail.value;
+          paymentResponse.complete('success');
+          demoApp.responseParsed = paymentResponse ? JSON.stringify(paymentResponse, null, '  ') : false;
+          demoApp.selectedItems = [];
+        }
 
-      demoApp.localeCurrency = function(amount, currency) {
-        return amount.toLocaleString(navigator.language, { style: 'currency', currency: currency });
-      }
+        demoApp.localeCurrency = function(amount, currency) {
+          return amount.toLocaleString(navigator.language, { style: 'currency', currency: currency });
+        }
+      })(window);
     </script>
   </body>
 </html>
