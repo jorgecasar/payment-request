@@ -1,4 +1,4 @@
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer-element.html">
 
 <!--
 `payment-method`
@@ -15,32 +15,37 @@ PaymentMethodData dictionary implementation from browser payment API
   </template>
 
   <script>
-    Polymer({
+    Polymer.PaymentMethod = class extends Polymer.Element {
 
-      is: 'payment-method',
+      static get is() {
+        return 'payment-method';
+      }
 
-      properties: {
-        supported: {
-          type: Array
-        },
-        data: {
-          type: Object,
-          value: function() {
-            return {};
+      static get properties() {
+        return {
+          supported: {
+            type: Array
+          },
+          data: {
+            type: Object,
+            value: function() {
+              return {};
+            }
+          },
+          dictionary: {
+            type: Object,
+            computed: '_computeDictionary(supported, data)'
           }
-        },
-        dictionary: {
-          type: Object,
-          computed: '_computeDictionary(supported, data)'
         }
-      },
+      }
 
-      _computeDictionary: function(supported, data) {
+      _computeDictionary(supported, data) {
         return {
           supportedMethods: supported,
           data: data
         };
       }
-    });
+    }
+    window.customElements.define(PaymentMethod.is, PaymentMethod);
   </script>
 </dom-module>

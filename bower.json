@@ -39,7 +39,7 @@
     "paper-listbox": "PolymerElements/paper-listbox#1 - 2",
     "paper-item": "PolymerElements/paper-item#1 - 2",
     "paper-toolbar": "PolymerElements/paper-toolbar#1 - 2",
-    "paper-toast": "PolymerElements/paper-toast##1 - 2",
+    "paper-toast": "PolymerElements/paper-toast#1 - 2",
     "app-layout": "PolymerElements/app-layout#1 - 2",
     "web-component-tester": "^6.0.0",
     "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0"

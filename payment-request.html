@@ -1,4 +1,4 @@
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer-element.html">
 <!--
   Prepare for 2.0
   <link rel="import" href="../polymer/lib/utils/flattened-nodes-observer.html">
@@ -28,216 +28,219 @@ Payment request API implementation
   </template>
 
   <script>
-    Polymer({
+    /**
+     * Fired when user interaction begins for the payment request.
+     *
+     * @event response
+     * @param {PaymentResponse} paymentResponse The payment information to process.
+     */
 
-      is: 'payment-request',
+    /**
+     * Fired when a PaymentRequest is created.
+     *
+     * @event request
+     * @param {PaymentRequest} paymentRequest The payment request.
+     */
 
-      /**
-       * Fired when user interaction begins for the payment request.
-       *
-       * @event response
-       * @param {PaymentResponse} paymentResponse The payment information to process.
-       */
+    /**
+    * Fired when the payment request is aborted
+    *
+    * @event aborted
+    */
 
-      /**
-       * Fired when a PaymentRequest is created.
-       *
-       * @event request
-       * @param {PaymentRequest} paymentRequest The payment request.
-       */
+    /**
+    * Fired when payment request generate an error.
+    *
+    * @event error
+    * @param {Error} error The request error.
+    */
 
-      /**
-      * Fired when the payment request is aborted
-      *
-      * @event aborted
-      */
+    /**
+    * Fired when PaymentRequest object can be used to make a payment.
+    *
+    * @event can-make-payment
+    */
 
-      /**
-      * Fired when payment request generate an error.
-      *
-      * @event error
-      * @param {Error} error The request error.
-      */
-
-      /**
-      * Fired when PaymentRequest object can be used to make a payment.
-      *
-      * @event can-make-payment
-      */
-
-      /**
-      * Fired when PaymentRequest object cannot be used to make a payment.
-      *
-      * @event cannot-make-payment
-      */
+    /**
+    * Fired when PaymentRequest object cannot be used to make a payment.
+    *
+    * @event cannot-make-payment
+    */
+    Polymer.PaymentRequestElement = class extends Polymer.Element {
+      static get is() {
+        return 'payment-request';
+      }
 
 
-      properties: {
+      static get properties() {
+        return {
+          /**
+           * This is a human-readable description of the total.
+           * The user agent may display this to the user.
+           */
+          label: String,
 
-        /**
-         * This is a human-readable description of the total.
-         * The user agent may display this to the user.
-         */
-        label: String,
+          /**
+           * A valid decimal monetary value containing a monetary amount of the total
+           */
+          value: Number,
 
-        /**
-         * A valid decimal monetary value containing a monetary amount of the total
-         */
-        value: Number,
-
-        /**
-         * A string containing a currency identifier of the total.
-         * The value of currency can be any string that is valid within
-         * the currency system indicated by currencySystem.
-         */
-        currency: {
-          type: String,
-          value: 'EUR'
-        },
-
-        /**
-         * Contains line items for the payment request that the user agent may display.
-         */
-        items: {
-          type: Array,
-          readOnly: true,
-          notify: true,
-          value: function() {
-            return [];
+          /**
+           * A string containing a currency identifier of the total.
+           * The value of currency can be any string that is valid within
+           * the currency system indicated by currencySystem.
+           */
+          currency: {
+            type: String,
+            value: 'EUR'
           },
-        },
 
-        /**
-         * Contains the total amount of the payment request.
-         */
-        total: {
-          type: Object,
-          readOnly: true,
-          notify: true,
-          value: function() {
-            return {};
+          /**
+           * Contains line items for the payment request that the user agent may display.
+           */
+          items: {
+            type: Array,
+            readOnly: true,
+            notify: true,
+            value: () => {
+              return [];
+            },
+          },
+
+          /**
+           * Contains the total amount of the payment request.
+           */
+          total: {
+            type: Object,
+            readOnly: true,
+            notify: true,
+            value: () => {
+              return {};
+            }
+          },
+
+          /**
+           * Is used to store supported payment methods and
+           * any associated payment method specific data for those methods.
+           */
+          methods: {
+            type: Array,
+            readOnly: true,
+            value: () => {
+              return [];
+            }
+          },
+
+          /**
+           * Provides information about the requested transaction.
+           */
+          details: {
+            type: Object,
+            computed: '_computeDetails(total, items, shippingItem)',
+          },
+
+          payerName: {
+            type: Boolean,
+            value: false
+          },
+          payerEmail: {
+            type: Boolean,
+            value: false
+          },
+          payerPhone: {
+            type: Boolean,
+            value: false
+          },
+          shipping: {
+            type: Boolean,
+            value: false
+          },
+          shippingType: {
+            type: String,
+            value: 'shipping'
+          },
+
+          options: {
+            type: Object,
+            computed: '_computeOptions(payerName, payerEmail, payerPhone, shipping, shippingType)'
+          },
+
+          shippingOptions: {
+            type: Array,
+            value: () => {
+              return [];
+            }
+          },
+
+          shippingOptionSelected: {
+            type: String
+          },
+
+          shippingItem: {
+            type: Object,
+            value: () => {
+              return null;
+            }
+          },
+
+          lastRequest: {
+            type: Object,
+            notify: true,
+            observer: '_dispatchRequest'
+          },
+
+          lastResponse: {
+            type: Object,
+            readOnly: true,
+            notify: true,
+            observer: '_dispatchResponse'
+          },
+
+          lastError: {
+            type: Object,
+            readOnly: true,
+            notify: true,
+            observer: '_dispatchError'
+          },
+
+          lastCanMakePayment: {
+            type: Boolean,
+            value: false,
+            notify: true
           }
-        },
-
-        /**
-         * Is used to store supported payment methods and
-         * any associated payment method specific data for those methods.
-         */
-        methods: {
-          type: Array,
-          readOnly: true,
-          value: function() {
-            return [];
-          }
-        },
-
-        /**
-         * Provides information about the requested transaction.
-         */
-        details: {
-          type: Object,
-          computed: '_computeDetails(total, items, shippingItem)',
-        },
-
-        payerName: {
-          type: Boolean,
-          value: false
-        },
-        payerEmail: {
-          type: Boolean,
-          value: false
-        },
-        payerPhone: {
-          type: Boolean,
-          value: false
-        },
-        shipping: {
-          type: Boolean,
-          value: false
-        },
-        shippingType: {
-          type: String,
-          value: 'shipping'
-        },
-
-        options: {
-          type: Object,
-          computed: '_computeOptions(payerName, payerEmail, payerPhone, shipping, shippingType)'
-        },
-
-        shippingOptions: {
-          type: Array,
-          value: function() {
-            return [];
-          }
-        },
-
-        shippingOptionSelected: {
-          type: String
-        },
-
-        shippingItem: {
-          type: Object,
-          value: function() {
-            return null;
-          }
-        },
-
-        lastRequest: {
-          type: Object,
-          notify: true,
-          observer: '_dispatchRequest'
-        },
-
-        lastResponse: {
-          type: Object,
-          readOnly: true,
-          notify: true,
-          observer: '_dispatchResponse'
-        },
-
-        lastError: {
-          type: Object,
-          readOnly: true,
-          notify: true,
-          observer: '_dispatchError'
-        },
-
-        lastCanMakePayment: {
-          type: Boolean,
-          value: false,
-          notify: true
         }
-      },
+      }
 
-      observers: [
-        '_updateTotal(items.length, shippingItem)',
-        '_updateShippingOptions(shippingOptionSelected)',
-        '_updateLastRequest(methods.*, details.*, options.*)',
-        'checkCanMakePayment(methods, lastRequest)'
-      ],
+      static get observers() {
+        return [
+          '_updateTotal(items.length, shippingItem)',
+          '_updateShippingOptions(shippingOptionSelected)',
+          '_updateLastRequest(methods.*, details.*, options.*)',
+          'checkCanMakePayment(methods, lastRequest)'
+        ];
+      }
 
-      attached: function() {
+      attached() {
         Polymer.RenderStatus.afterNextRender(this, this._updatePropertiesFromNodes);
         var buyButton = Polymer.dom(this.$.buyButton).getDistributedNodes()[0];
         this.listen(buyButton, 'tap', 'buyButtonTap');
         this.onShippingAddressChange = this.onShippingAddressChange.bind(this);
         this.onShippingOptionChange = this.onShippingOptionChange.bind(this);
-      },
+      }
 
-      detached : function() {
+      detached() {
         this.__unobserveNodes('methods');
         this.__unobserveNodes('items');
         this.__unobserveNodes('shippingOptions');
-      },
+      }
 
-      _updatePropertiesFromNodes: function() {
+      _updatePropertiesFromNodes() {
         this.__observeNodes('methods');
         this.__observeNodes('items');
         this.__observeNodes('shippingOptions');
-      },
+      }
 
-      __updatePropertyFromNodes: function(observerInfo) {
+      __updatePropertyFromNodes(observerInfo) {
         var property = observerInfo.target.id;
         if (!observerInfo) {
           observerInfo = {
@@ -255,31 +258,31 @@ Payment request API implementation
         observerInfo.removedNodes.filter(this._isElementNode).forEach(function(node) {
           this.splice(property, this[property].indexOf(node.dictionary), 1);
         }.bind(this));
-      },
+      }
 
-      _isElementNode: function(node) {
+      _isElementNode(node) {
         return (node.nodeType === Node.ELEMENT_NODE && node.dictionary);
-      },
+      }
 
-      __observerNode: function(node) {
+      __observerNode(node) {
         return '_' + node + 'Observer';
-      },
+      }
 
-      __observeNodes: function(property) {
+      __observeNodes(property) {
         // Watch for future updates.
         if (!this[this.__observerNode(property)]) {
           //this[this.__observerNode(property)] = new Polymer.FlattenedNodesObserver(this.$[property], this.__updatePropertyFromNodes.bind(this));
           this[this.__observerNode(property)] = Polymer.dom(this.$[property]).observeNodes(this.__updatePropertyFromNodes.bind(this));
         }
-      },
+      }
 
-      __unobserveNodes: function(property) {
+      __unobserveNodes(property) {
         if (this[this.__observerNode(property)]) {
           Polymer.dom(this).unobserveNodes(this[this.__observerNode(property)]);
         }
-      },
+      }
 
-      _updateTotal: function() {
+      _updateTotal() {
         var totalDom = Polymer.dom(this.$.total);
         var total = totalDom.getDistributedNodes()[0];
         if (!total) {
@@ -303,16 +306,16 @@ Payment request API implementation
         total.currency = currency || 'EUR';
 
         this._setTotal(total.dictionary);
-      },
+      }
 
-      _computeDetails: function(total, items, shippingItem) {
+      _computeDetails(total, items, shippingItem) {
         return {
           total: total,
           displayItems: shippingItem ? items.concat(shippingItem): items
         };
-      },
+      }
 
-      _computeOptions: function(payerName, payerEmail, payerPhone, shipping, shippingType) {
+      _computeOptions(payerName, payerEmail, payerPhone, shipping, shippingType) {
         return {
           requestPayerName: payerName,
           requestPayerEmail: payerEmail,
@@ -320,7 +323,7 @@ Payment request API implementation
           requestShipping: shipping,
           shippingType: shippingType
         };
-      },
+      }
 
       /**
        * Construct a PaymentRequest using the supplied methodData list including any
@@ -328,14 +331,14 @@ Payment request API implementation
        *
        * @return  {PaymentRequest}
        */
-      _updateLastRequest: function(methods, details, options) {
+      _updateLastRequest(methods, details, options) {
         methods = methods.base;
         details = details.base;
         options = options.base;
         this.updateLastRequest(methods, details, options);
-      },
+      }
 
-      updateLastRequest: function(methods, details, options) {
+      updateLastRequest(methods, details, options) {
         methods = methods || this.methods;
         details = details || this.details;
         options = options || this.options;
@@ -348,27 +351,27 @@ Payment request API implementation
         } else {
           this.lastRequest = null;
         }
-      },
+      }
 
-      addRequestListeners: function() {
+      addRequestListeners() {
         if (this.shipping) {
           this.lastRequest.addEventListener('shippingaddresschange', this.onShippingAddressChange);
           this.lastRequest.addEventListener('shippingoptionchange', this.onShippingOptionChange);
         }
-      },
+      }
 
-      removeRequestListeners: function() {
+      removeRequestListeners() {
         if (this.shipping) {
           this.lastRequest.removeEventListener('shippingaddresschange', this.onShippingAddressChange);
           this.lastRequest.removeEventListener('shippingoptionchange', this.onShippingOptionChange);
         }
-      },
+      }
 
       /**
        * Method executed when payButton is tapped.
        * You can override it to do something more complex.
        */
-      buyButtonTap: function() {
+      buyButtonTap() {
         if ('PaymentRequest' in window) {
           this.show();
         } else {
@@ -376,14 +379,14 @@ Payment request API implementation
             detail: 'Payment Request API not supported'
           });
         }
-      },
+      }
 
       /**
        * Determine if the PaymentRequest object can be used to make a payment.
        *
        * @return {Promise}
        */
-      checkCanMakePayment: function(methods, lastRequest) {
+      checkCanMakePayment(methods, lastRequest) {
         var promise;
         if (methods.length && lastRequest && lastRequest.canMakePayment) {
           promise = lastRequest.canMakePayment()
@@ -396,14 +399,14 @@ Payment request API implementation
           });
         }
         return promise;
-      },
+      }
 
       /**
        * Begin user interaction for the payment request.
        *
        * @return {Promise}
        */
-      show: function() {
+      show() {
         if (this.lastRequest) {
           return this.lastRequest.show()
             .then(this._setLastResponse.bind(this))
@@ -420,13 +423,13 @@ Payment request API implementation
           }
           this._setLastError({ detail: detail });
         }
-      },
+      }
 
       /**
        * Abort the payment request
        * @return {Promise}
        */
-      abort: function() {
+      abort() {
         var promise;
         if (this.lastRequest) {
           promise = this.lastRequest.abort()
@@ -443,46 +446,46 @@ Payment request API implementation
         }
         return promise
           .catch(this._setLastError.bind(this));
-      },
+      }
 
-      onShippingAddressChange: function(evt) {
+      onShippingAddressChange(evt) {
         evt.updateWith(this.updateWithShippingAddress(evt));
-      },
+      }
 
-      onShippingOptionChange: function(evt) {
+      onShippingOptionChange(evt) {
         evt.updateWith(this.updateWithShippingOptions(evt));
-      },
+      }
 
-      updateWithShippingAddress: function(evt) {
+      updateWithShippingAddress(evt) {
         this.changeShippingOption(evt.target.shippingOption);
         this._updateTotal();
         this._updateShippingOptions();
         return Promise.resolve(this.details);
-      },
+      }
 
-      updateWithShippingOptions: function(evt) {
+      updateWithShippingOptions(evt) {
         this.changeShippingOption(evt.target.shippingOption);
         this._updateTotal();
         this._updateShippingOptions();
         return Promise.resolve(this.details);
-      },
+      }
 
-      changeShippingOption: function(shippingOption) {
+      changeShippingOption(shippingOption) {
         shippingOption = shippingOption || this.$.shippingOptionsSelector.selected;
         // Add shipping option to displayed items
         if (shippingOption) {
           this.$.shippingOptionsSelector.select(shippingOption);
           this.shippingItem = this.$.shippingOptionsSelector.selectedItem.dictionary;
         }
-      },
+      }
 
-      _updateShippingOptions: function() {
+      _updateShippingOptions() {
         this.set('details.shippingOptions', this.$.shippingOptionsSelector.items.map(function(item) {
           return item.dictionary;
         }));
-      },
+      }
 
-      _dispatchError: function(error) {
+      _dispatchError(error) {
         if (error) {
           this.dispatchEvent(
             new CustomEvent('error', {
@@ -491,9 +494,9 @@ Payment request API implementation
           );
         }
         return error;
-      },
+      }
 
-      _dispatchResponse: function(response) {
+      _dispatchResponse(response) {
         if (response !== null) {
           this.dispatchEvent(
             new CustomEvent('response', {
@@ -502,9 +505,9 @@ Payment request API implementation
           );
         }
         return response;
-      },
+      }
 
-      _dispatchRequest: function(request) {
+      _dispatchRequest(request) {
         this.dispatchEvent(
           new CustomEvent('request', {
             detail: request
@@ -513,6 +516,7 @@ Payment request API implementation
         return request;
       }
 
-    });
+    }
+    window.customElements.define(PaymentRequestElement.is, PaymentRequestElement);
   </script>
 </dom-module>
