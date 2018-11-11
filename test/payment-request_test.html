@@ -6,25 +6,37 @@
 
     <title>payment-request test</title>
 
-    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-    <script src="../../web-component-tester/browser.js"></script>
+    <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+    <script src="../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script src="../node_modules/chai/chai.js"></script>
+    <script src="../node_modules/wct-mocha/wct-mocha.js"></script>
 
-    <link rel="import" href="../payment-request.html">
+    <script type="module" src="../payment-request.js"></script>
   </head>
   <body>
-    <test-fixture id="basic">
+
+    <test-fixture id="BasicTestFixture">
       <template>
         <payment-request></payment-request>
       </template>
     </test-fixture>
 
-    <script>
-      suite('payment-request', function() {
-        test('instantiating the element works', function() {
-          var element = fixture('basic');
-          assert.equal(element.is, 'payment-request');
+    <test-fixture id="ChangedPropertyTestFixture">
+      <template>
+        <payment-request prop1="new-prop1"></payment-request>
+      </template>
+    </test-fixture>
+
+    <script type="module">
+      suite('payment-request', () => {
+        test('instantiating the element with default properties works', () => {
+          const element = fixture('BasicTestFixture');
+
+          assert.equal(this.$.buyButton.name, 'button');
         });
       });
     </script>
+
   </body>
 </html>
