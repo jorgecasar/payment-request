@@ -37,7 +37,7 @@ Or [download as ZIP](https://github.com/jorgecasar/payment-request/archive/maste
 	```html
 	<payment-request label="Total" currency="EUR">
 		<payment-method slot="method" supported='["basic-card"]' data='{
-				"supportedNetwork": ["amex", "mastercard", "visa" ],
+				"supportedNetworks": ["amex", "mastercard", "visa" ],
 				"supportedTypes": ["debit", "credit"]
 		}'></payment-method>
 		<payment-item label="Item 1" currency="EUR" value="1337"></payment-item>
